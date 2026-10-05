@@ -418,369 +418,260 @@
   </div>
 
   <script>
-    const STORAGE_KEY = 'nastebel-crm-demo-v3';
-    const today = () => new Date().toISOString().slice(0,10);
-    const rub = n => new Intl.NumberFormat('ru-RU',{maximumFractionDigits:0}).format(Math.round(Number(n)||0)) + ' ₽';
-    const dateRu = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('ru-RU') : '—';
+const API_URL="https://xjvktqjlooquiewkvsmk.supabase.co/functions/v1/nastebel-crm-api";
+let sessionToken=localStorage.getItem("nastebel_crm_session")||"";
+let state={clients:[],subscriptions:[],inventory:[],orders:[],reservations:[],purchases:[],purchaseItems:[],payments:[],expenses:[],writeoffs:[],history:[]};
 
-    const seed = {
-      inventory:[
-        {id:1,type:'fresh',name:'Роза',color:'Белый',qty:40,cost:180},
-        {id:2,type:'fresh',name:'Эвкалипт',color:'Зелёный',qty:24,cost:110},
-        {id:3,type:'fresh',name:'Хризантема',color:'Белый',qty:32,cost:95},
-        {id:4,type:'fresh',name:'Лилия',color:'Розовый',qty:15,cost:230},
-        {id:5,type:'dried',name:'Лагурус',color:'Натуральный',qty:20,cost:120},
-        {id:6,type:'dried',name:'Статица',color:'Белый',qty:18,cost:90}
-      ],
-      clients:[
-        {id:1,company:'Клиника Диляры',inn:'7700000001',contact:'Диляра',phone:'',status:'В работе',model:'subscription',paid:15000},
-        {id:2,company:'Клиника Натальи',inn:'7700000002',contact:'Наталья',phone:'',status:'В работе',model:'one',paid:7000},
-        {id:3,company:'Кофейня',inn:'',contact:'Соня',phone:'',status:'Переговоры',model:'subscription',paid:0}
-      ],
-      subscriptions:[
-        {id:1,clientId:1,start:'2026-10-01',months:1,perMonth:3,bouquetPrice:5000,discount:0,paid:15000,delivered:1,status:'Активна'},
-        {id:2,clientId:3,start:'2026-10-10',months:1,perMonth:3,bouquetPrice:3000,discount:0,paid:0,delivered:0,status:'Подготовка'}
-      ],
-      orders:[
-        {id:101,clientId:1,model:'subscription',date:'2026-10-10',price:5000,status:'shipped',reserve:[{itemId:1,qty:7},{itemId:2,qty:4}],note:''},
-        {id:102,clientId:1,model:'subscription',date:'2026-10-20',price:5000,status:'reserved',reserve:[{itemId:1,qty:8},{itemId:3,qty:5}],note:''},
-        {id:103,clientId:2,model:'one',date:'2026-10-12',price:7000,status:'reserved',reserve:[{itemId:5,qty:6},{itemId:6,qty:4}],note:''}
-      ],
-      purchases:[
-        {id:1,date:'2026-10-05',type:'fresh',name:'Роза',color:'Белый',qty:40,unitCost:180,supplier:'',target:'Свободный склад'},
-        {id:2,date:'2026-10-05',type:'fresh',name:'Эвкалипт',color:'Зелёный',qty:24,unitCost:110,supplier:'',target:'Свободный склад'},
-        {id:3,date:'2026-10-04',type:'dried',name:'Лагурус',color:'Натуральный',qty:20,unitCost:120,supplier:'',target:'Свободный склад'}
-      ],
-      expenses:[
-        {id:1,date:'2026-10-10',category:'Логистика',description:'Доставка в клинику',amount:450,orderId:101},
-        {id:2,date:'2026-10-10',category:'Упаковка',description:'Аквапак и лента',amount:180,orderId:101}
-      ],
-      writeoffs:[
-        {id:1,date:'2026-10-08',itemId:3,qty:3,reason:'Увяло / испортилось',cost:285}
-      ],
-      history:[
-        {id:1,date:'2026-10-10',type:'Отгрузка',description:'Заказ #101 подтверждён',clientId:1,amount:5000},
-        {id:2,date:'2026-10-08',type:'Списание',description:'Хризантема, 3 шт.',clientId:null,amount:285},
-        {id:3,date:'2026-10-05',type:'Закупка',description:'Роза, 40 шт.',clientId:null,amount:7200}
-      ]
-    };
+const rub=n=>new Intl.NumberFormat("ru-RU",{maximumFractionDigits:0}).format(Math.round(Number(n)||0))+" ₽";
+const dateRu=d=>d?new Date(String(d).slice(0,10)+"T12:00:00").toLocaleDateString("ru-RU"):"—";
+const today=()=>new Date().toISOString().slice(0,10);
+const clientById=id=>state.clients.find(x=>x.id===id);
+const itemById=id=>state.inventory.find(x=>x.id===id);
+const orderById=id=>state.orders.find(x=>x.id===id);
+const subById=id=>state.subscriptions.find(x=>x.id===id);
+const orderReservations=id=>state.reservations.filter(r=>r.order_id===id);
+const orderExpenses=id=>state.expenses.filter(e=>e.order_id===id).reduce((s,e)=>s+Number(e.amount||0),0);
+const orderCogs=o=>orderReservations(o.id).reduce((s,r)=>s+Number(r.quantity||0)*Number(r.unit_cost||0),0);
+const reservedQty=itemId=>state.reservations.filter(r=>{
+  const o=orderById(r.order_id); return r.item_id===itemId&&o&&o.status==="reserved";
+}).reduce((s,r)=>s+Number(r.quantity||0),0);
+const freeQty=i=>Math.max(0,Number(i.quantity||0)-reservedQty(i.id));
+const paidByClient=id=>state.payments.filter(p=>p.client_id===id).reduce((s,p)=>s+Number(p.amount||0),0);
+const earnedByClient=id=>state.orders.filter(o=>o.client_id===id&&o.status==="shipped").reduce((s,o)=>s+Number(o.sale_price||0),0);
+const earnedRevenue=()=>state.orders.filter(o=>o.status==="shipped").reduce((s,o)=>s+Number(o.sale_price||0),0);
+const inventoryValue=()=>state.inventory.reduce((s,i)=>s+Number(i.quantity||0)*Number(i.avg_cost||0),0);
+const writeoffValue=()=>state.writeoffs.reduce((s,w)=>s+Number(w.quantity||0)*Number(w.unit_cost||0),0);
+const totalPaid=()=>state.payments.reduce((s,p)=>s+Number(p.amount||0),0);
+const totalProfit=()=>{
+  const shipped=state.orders.filter(o=>o.status==="shipped").reduce((s,o)=>s+Number(o.sale_price||0)-orderCogs(o)-orderExpenses(o.id),0);
+  const general=state.expenses.filter(e=>!e.order_id).reduce((s,e)=>s+Number(e.amount||0),0);
+  return shipped-general-writeoffValue();
+};
 
-    let state;
-    try{ state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || structuredClone(seed); }
-    catch(e){ state = structuredClone(seed); }
+async function api(action,payload={}){
+  const headers={"Content-Type":"application/json"};
+  if(sessionToken) headers.Authorization="Bearer "+sessionToken;
+  const res=await fetch(API_URL,{method:"POST",headers,body:JSON.stringify(Object.assign({action},payload))});
+  const data=await res.json().catch(()=>({error:"Ошибка ответа сервера"}));
+  if(res.status===401&&action!=="login"){
+    localStorage.removeItem("nastebel_crm_session"); sessionToken="";
+    showLogin(); throw new Error("Сессия истекла. Войди заново.");
+  }
+  if(!res.ok) throw new Error(data.error||"Ошибка сервера");
+  return data;
+}
+async function loadData(){
+  const r=await api("load");
+  state=r.data||state;
+  render();
+}
+function showApp(){
+  document.getElementById("loginScreen").classList.add("hidden");
+  document.getElementById("app").classList.remove("hidden");
+}
+function showLogin(){
+  document.getElementById("loginScreen").classList.remove("hidden");
+  document.getElementById("app").classList.add("hidden");
+}
+async function login(){
+  const password=document.getElementById("passwordInput").value;
+  const err=document.getElementById("loginError");
+  err.classList.add("hidden");
+  try{
+    const r=await api("login",{password});
+    sessionToken=r.token;
+    localStorage.setItem("nastebel_crm_session",sessionToken);
+    showApp();
+    await loadData();
+  }catch(e){err.textContent=e.message;err.classList.remove("hidden");}
+}
 
-    const save = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    const clientById = id => state.clients.find(x=>x.id===Number(id));
-    const itemById = id => state.inventory.find(x=>x.id===Number(id));
-    const orderById = id => state.orders.find(x=>x.id===Number(id));
+const pageMeta={
+  dashboard:["Главная","Общая картина бизнеса на сегодня"],
+  fresh:["Свежие цветы","Физический склад, резерв и свободный остаток"],
+  dried:["Сухоцветы","Отдельный склад долговечных материалов"],
+  purchases:["Закупки","Что, когда, сколько и по какой цене купили"],
+  writeoffs:["Списания","Контроль потерь и причин"],
+  orders:["Заказы","От создания до подтверждённой отгрузки"],
+  clients:["Клиенты","Статусы, форматы работы и экономика"],
+  subscriptions:["Подписки","Сроки, поставки и прогресс"],
+  expenses:["Расходы","Операционные расходы и привязка к заказам"],
+  reports:["Отчёты","Выручка, себестоимость и прибыль"],
+  history:["История","Полная история движения товара и денег"]
+};
+function showPage(name){
+  document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
+  document.getElementById("page-"+name).classList.add("active");
+  document.querySelectorAll(".nav-btn").forEach(x=>x.classList.toggle("active",x.dataset.page===name));
+  document.getElementById("pageTitle").textContent=pageMeta[name][0];
+  document.getElementById("pageSubtitle").textContent=pageMeta[name][1];
+}
+function badgeStatus(status){
+  const map={reserved:["В резерве","warn"],shipped:["Отгружен","ok"],draft:["Черновик",""],cancelled:["Отменён","danger"]};
+  const a=map[status]||[status,""];
+  return '<span class="badge '+a[1]+'">'+a[0]+'</span>';
+}
+function renderInventory(type,target){
+  const rows=state.inventory.filter(i=>i.category===type).sort((a,b)=>a.name.localeCompare(b.name,"ru")).map(i=>{
+    const r=reservedQty(i.id),f=freeQty(i);
+    return '<tr><td><strong>'+i.name+'</strong></td><td>'+i.color+'</td><td>'+i.quantity+' шт.</td><td>'+r+' шт.</td><td>'+f+' шт.</td><td>'+rub(i.avg_cost)+'</td></tr>';
+  }).join("");
+  document.getElementById(target).innerHTML=rows||'<tr><td colspan="6" class="empty">Пока пусто</td></tr>';
+}
+function render(){
+  const kpis=[
+    ["Стоимость склада",rub(inventoryValue()),"Физический остаток"],
+    ["В резерве",state.inventory.reduce((s,i)=>s+reservedQty(i.id),0)+" шт.","Под конкретные заказы"],
+    ["Получено оплат",rub(totalPaid()),"Деньги уже поступили"],
+    ["Заработано",rub(earnedRevenue()),"Только подтверждённые отгрузки"],
+    ["Прибыль",rub(totalProfit()),"После себестоимости и расходов"],
+    ["Списания",rub(writeoffValue()),"По себестоимости"]
+  ];
+  const htmlKpi=kpis.map(k=>'<div class="kpi"><div class="kpi-label">'+k[0]+'</div><div class="kpi-value">'+k[1]+'</div><div class="kpi-note">'+k[2]+'</div></div>').join("");
+  document.getElementById("kpiGrid").innerHTML=htmlKpi;
+  document.getElementById("reportKpis").innerHTML=htmlKpi;
 
-    function reservedQty(itemId){
-      return state.orders.filter(o=>o.status==='reserved').reduce((sum,o)=>sum + o.reserve.filter(r=>r.itemId===itemId).reduce((s,r)=>s+r.qty,0),0);
-    }
-    function freeQty(item){ return Math.max(0,item.qty-reservedQty(item.id)); }
-    function orderCogs(order){
-      return order.reserve.reduce((sum,r)=>sum + (itemById(r.itemId)?.cost||0)*r.qty,0);
-    }
-    function orderExpenses(orderId){ return state.expenses.filter(e=>e.orderId===orderId).reduce((s,e)=>s+e.amount,0); }
-    function orderProfit(order){ return order.status==='shipped' ? order.price-orderCogs(order)-orderExpenses(order.id) : 0; }
-    function earnedRevenue(){ return state.orders.filter(o=>o.status==='shipped').reduce((s,o)=>s+o.price,0); }
-    function totalProfit(){ return state.orders.reduce((s,o)=>s+orderProfit(o),0) - state.writeoffs.reduce((s,w)=>s+w.cost,0); }
-    function totalPaid(){ return state.clients.reduce((s,c)=>s+(c.paid||0),0); }
-    function inventoryValue(){ return state.inventory.reduce((s,i)=>s+i.qty*i.cost,0); }
-    function reserveCount(){ return state.inventory.reduce((s,i)=>s+reservedQty(i.id),0); }
+  document.getElementById("moneySummary").innerHTML=[
+    ["Оплаты от клиентов",rub(totalPaid())],
+    ["Признанная выручка",rub(earnedRevenue())],
+    ["Себестоимость отгруженного",rub(state.orders.filter(o=>o.status==="shipped").reduce((s,o)=>s+orderCogs(o),0))],
+    ["Операционные расходы",rub(state.expenses.reduce((s,e)=>s+Number(e.amount||0),0))],
+    ["Списания",rub(writeoffValue())],
+    ["Итоговая прибыль",rub(totalProfit())]
+  ].map(x=>'<div class="metric-line"><span>'+x[0]+'</span><strong>'+x[1]+'</strong></div>').join("");
 
-    const pageMeta={
-      dashboard:['Главная','Общая картина бизнеса на сегодня'],
-      fresh:['Свежие цветы','Физический склад, резерв и свободный остаток'],
-      dried:['Сухоцветы','Отдельный склад долговечных материалов'],
-      purchases:['Закупки','Что, когда, сколько и по какой цене купили'],
-      writeoffs:['Списания','Контроль потерь и причин'],
-      orders:['Заказы','От создания до подтверждённой отгрузки'],
-      clients:['Клиенты','Статусы, форматы работы и экономика'],
-      subscriptions:['Подписки','Сроки, поставки и прогресс'],
-      expenses:['Расходы','Операционные расходы и привязка к заказам'],
-      reports:['Отчёты','Выручка, себестоимость и прибыль'],
-      history:['История','Полная история движения товара и денег']
-    };
+  const reserves=state.orders.filter(o=>o.status==="reserved");
+  document.getElementById("reserveTable").innerHTML=reserves.map(o=>{
+    const c=clientById(o.client_id);
+    const pills=orderReservations(o.id).map(r=>{const i=itemById(r.item_id);return '<span class="reserve-pill">'+(i?i.name+" "+i.color:"Позиция")+' × '+r.quantity+'</span>';}).join("");
+    return '<tr><td>#'+o.order_no+'</td><td>'+(c?c.company_name:"—")+'</td><td>'+dateRu(o.delivery_date)+'</td><td><div class="order-reserve">'+pills+'</div></td><td><div class="order-reserve"><button class="small-btn" data-release="'+o.id+'">Удалить резерв</button><button class="small-btn" data-ship="'+o.id+'">Подтвердить отгрузку</button></div></td></tr>';
+  }).join("")||'<tr><td colspan="5" class="empty">Активных резервов нет</td></tr>';
 
-    function showPage(name){
-      document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
-      document.getElementById('page-'+name).classList.add('active');
-      document.querySelectorAll('.nav-btn').forEach(x=>x.classList.toggle('active',x.dataset.page===name));
-      document.getElementById('pageTitle').textContent=pageMeta[name][0];
-      document.getElementById('pageSubtitle').textContent=pageMeta[name][1];
-    }
+  document.getElementById("upcomingTable").innerHTML=state.orders.filter(o=>o.status!=="shipped"&&o.status!=="cancelled").sort((a,b)=>String(a.delivery_date).localeCompare(String(b.delivery_date))).map(o=>{
+    const c=clientById(o.client_id);
+    return '<tr><td>'+dateRu(o.delivery_date)+'</td><td>'+(c?c.company_name:"—")+'</td><td>'+(o.subscription_id?"Подписка":"Разовый")+'</td><td>'+rub(o.sale_price)+'</td><td>'+badgeStatus(o.status)+'</td></tr>';
+  }).join("")||'<tr><td colspan="5" class="empty">Ближайших поставок нет</td></tr>';
 
-    function badgeStatus(status){
-      const map={reserved:['В резерве','warn'],shipped:['Отгружен','ok'],draft:['Черновик',''],cancelled:['Отменён','danger']};
-      const a=map[status]||[status,''];
-      return '<span class="badge '+a[1]+'">'+a[0]+'</span>';
-    }
+  renderInventory("fresh","freshTable");
+  renderInventory("dried","driedTable");
 
-    function renderInventory(type, target){
-      const rows=state.inventory.filter(i=>i.type===type).sort((a,b)=>a.name.localeCompare(b.name,'ru')).map(i=>{
-        const r=reservedQty(i.id), f=freeQty(i);
-        return '<tr><td><strong>'+i.name+'</strong></td><td>'+i.color+'</td><td>'+i.qty+' шт.</td><td>'+r+' шт.</td><td>'+f+' шт.</td><td>'+rub(i.cost)+'</td></tr>';
-      }).join('');
-      document.getElementById(target).innerHTML=rows||'<tr><td colspan="6" class="empty">Пока пусто</td></tr>';
-    }
+  const purchaseRows=[];
+  state.purchaseItems.forEach(pi=>{
+    const p=state.purchases.find(x=>x.id===pi.purchase_id),i=itemById(pi.item_id),o=p&&p.target_order_id?orderById(p.target_order_id):null,c=o?clientById(o.client_id):null;
+    purchaseRows.push({date:p?p.purchase_date:"",item:i,pi,target:o?("#"+o.order_no+" · "+(c?c.company_name:"")):"Свободный склад"});
+  });
+  document.getElementById("purchaseTable").innerHTML=purchaseRows.sort((a,b)=>String(b.date).localeCompare(String(a.date))).map(x=>'<tr><td>'+dateRu(x.date)+'</td><td>'+(x.item&&x.item.category==="fresh"?"Свежие":"Сухоцветы")+'</td><td>'+(x.item?x.item.name:"—")+'</td><td>'+(x.item?x.item.color:"—")+'</td><td>'+x.pi.quantity+' шт.</td><td>'+rub(x.pi.unit_cost)+'</td><td>'+rub(Number(x.pi.quantity)*Number(x.pi.unit_cost))+'</td><td>'+x.target+'</td></tr>').join("")||'<tr><td colspan="8" class="empty">Закупок нет</td></tr>';
 
-    function render(){
-      const shipped=state.orders.filter(o=>o.status==='shipped');
-      const writeoffSum=state.writeoffs.reduce((s,w)=>s+w.cost,0);
-      const ops=state.expenses.reduce((s,e)=>s+e.amount,0);
-      const kpis=[
-        ['Стоимость склада',rub(inventoryValue()),'Физический остаток'],
-        ['В резерве',reserveCount()+' шт.','Под конкретные заказы'],
-        ['Получено оплат',rub(totalPaid()),'Деньги уже поступили'],
-        ['Заработано',rub(earnedRevenue()),'Только подтверждённые отгрузки'],
-        ['Прибыль',rub(totalProfit()),'После себестоимости и расходов'],
-        ['Списания',rub(writeoffSum),'По себестоимости']
-      ];
-      document.getElementById('kpiGrid').innerHTML=kpis.map(k=>'<div class="kpi"><div class="kpi-label">'+k[0]+'</div><div class="kpi-value">'+k[1]+'</div><div class="kpi-note">'+k[2]+'</div></div>').join('');
-      document.getElementById('reportKpis').innerHTML=kpis.map(k=>'<div class="kpi"><div class="kpi-label">'+k[0]+'</div><div class="kpi-value">'+k[1]+'</div><div class="kpi-note">'+k[2]+'</div></div>').join('');
+  document.getElementById("writeoffTable").innerHTML=state.writeoffs.map(w=>{const i=itemById(w.item_id);return '<tr><td>'+dateRu(w.writeoff_date)+'</td><td>'+(i?i.name+" · "+i.color:"—")+'</td><td>'+w.quantity+' шт.</td><td>'+w.reason+'</td><td>'+rub(Number(w.quantity)*Number(w.unit_cost))+'</td></tr>';}).join("")||'<tr><td colspan="5" class="empty">Списаний нет</td></tr>';
 
-      document.getElementById('moneySummary').innerHTML=[
-        ['Оплаты от клиентов',rub(totalPaid())],
-        ['Признанная выручка',rub(earnedRevenue())],
-        ['Себестоимость отгруженного',rub(shipped.reduce((s,o)=>s+orderCogs(o),0))],
-        ['Операционные расходы',rub(ops)],
-        ['Списания',rub(writeoffSum)],
-        ['Итоговая прибыль',rub(totalProfit())]
-      ].map(x=>'<div class="metric-line"><span>'+x[0]+'</span><strong>'+x[1]+'</strong></div>').join('');
+  document.getElementById("ordersTable").innerHTML=state.orders.map(o=>{
+    const c=clientById(o.client_id),cogs=orderCogs(o),profit=o.status==="shipped"?Number(o.sale_price)-cogs-orderExpenses(o.id):0;
+    return '<tr><td>#'+o.order_no+'</td><td>'+(c?c.company_name:"—")+'</td><td>'+dateRu(o.delivery_date)+'</td><td>'+(o.subscription_id?"Подписка":"Разовый")+'</td><td>'+rub(o.sale_price)+'</td><td>'+rub(cogs)+'</td><td>'+(o.status==="shipped"?rub(profit):"—")+'</td><td>'+badgeStatus(o.status)+'</td></tr>';
+  }).join("")||'<tr><td colspan="8" class="empty">Заказов нет</td></tr>';
 
-      const reserves=state.orders.filter(o=>o.status==='reserved');
-      document.getElementById('reserveTable').innerHTML=reserves.map(o=>{
-        const c=clientById(o.clientId);
-        const pills=o.reserve.map(r=>{const i=itemById(r.itemId);return '<span class="reserve-pill">'+i.name+' '+i.color+' × '+r.qty+'</span>';}).join('');
-        return '<tr><td>#'+o.id+'</td><td>'+c.company+'</td><td>'+dateRu(o.date)+'</td><td><div class="order-reserve">'+pills+'</div></td><td><div class="order-reserve"><button class="small-btn" onclick="releaseReserve('+o.id+')">Удалить резерв</button><button class="small-btn" onclick="shipOrder('+o.id+')">Подтвердить отгрузку</button></div></td></tr>';
-      }).join('')||'<tr><td colspan="5" class="empty">Активных резервов нет</td></tr>';
+  document.getElementById("clientsTable").innerHTML=state.clients.map(c=>'<tr><td><strong>'+c.company_name+'</strong></td><td>'+(c.inn||"—")+'</td><td>'+(c.contact_name||"—")+'</td><td><span class="badge">'+c.status+'</span></td><td>'+(c.work_model==="subscription"?"Подписка":"Разовые поставки")+'</td><td>'+rub(paidByClient(c.id))+'</td><td>'+rub(earnedByClient(c.id))+'</td></tr>').join("")||'<tr><td colspan="7" class="empty">Клиентов нет</td></tr>';
 
-      document.getElementById('upcomingTable').innerHTML=state.orders.filter(o=>o.status!=='shipped').sort((a,b)=>a.date.localeCompare(b.date)).map(o=>{
-        const c=clientById(o.clientId);
-        return '<tr><td>'+dateRu(o.date)+'</td><td>'+c.company+'</td><td>'+(o.model==='subscription'?'Подписка':'Разовый')+'</td><td>'+rub(o.price)+'</td><td>'+badgeStatus(o.status)+'</td></tr>';
-      }).join('');
+  document.getElementById("subscriptionsTable").innerHTML=state.subscriptions.map(s=>{
+    const c=clientById(s.client_id),total=Number(s.months)*Number(s.deliveries_per_month);
+    const delivered=state.orders.filter(o=>o.subscription_id===s.id&&o.status==="shipped").length;
+    const pct=total?Math.min(100,Math.round(delivered/total*100)):0;
+    const paid=state.payments.filter(p=>p.subscription_id===s.id).reduce((sum,p)=>sum+Number(p.amount||0),0);
+    const label=s.status==="active"?"Активна":s.status==="completed"?"Завершена":s.status==="paused"?"Пауза":"Отменена";
+    return '<tr><td><strong>'+(c?c.company_name:"—")+'</strong></td><td>'+dateRu(s.start_date)+' · '+s.months+' мес.</td><td>'+delivered+' из '+total+'</td><td>'+rub(s.bouquet_price)+'</td><td>'+rub(paid)+'</td><td><div class="progress-row"><div>'+pct+'%</div><div class="progress"><span style="width:'+pct+'%"></span></div></div></td><td><span class="badge '+(s.status==="active"?"ok":"")+'">'+label+'</span></td></tr>';
+  }).join("")||'<tr><td colspan="7" class="empty">Подписок нет</td></tr>';
 
-      renderInventory('fresh','freshTable');
-      renderInventory('dried','driedTable');
+  document.getElementById("expensesTable").innerHTML=state.expenses.map(e=>{const o=e.order_id?orderById(e.order_id):null,c=o?clientById(o.client_id):null;return '<tr><td>'+dateRu(e.expense_date)+'</td><td>'+e.category+'</td><td>'+(e.description||"—")+'</td><td>'+(o?(c?c.company_name:"")+" · #"+o.order_no:"Общий расход")+'</td><td>'+rub(e.amount)+'</td></tr>';}).join("")||'<tr><td colspan="5" class="empty">Расходов нет</td></tr>';
 
-      document.getElementById('purchaseTable').innerHTML=state.purchases.slice().reverse().map(p=>'<tr><td>'+dateRu(p.date)+'</td><td>'+(p.type==='fresh'?'Свежие':'Сухоцветы')+'</td><td>'+p.name+'</td><td>'+p.color+'</td><td>'+p.qty+' шт.</td><td>'+rub(p.unitCost)+'</td><td>'+rub(p.qty*p.unitCost)+'</td><td>'+p.target+'</td></tr>').join('');
+  const hist=state.history;
+  const histHtml=hist.map(h=>{const c=h.client_id?clientById(h.client_id):null;return '<tr><td>'+new Date(h.event_date).toLocaleString("ru-RU")+'</td><td>'+h.event_type+'</td><td>'+h.description+'</td><td>'+(c?c.company_name:"—")+'</td><td>'+(h.amount?rub(h.amount):"—")+'</td></tr>';}).join("");
+  document.getElementById("historyTable").innerHTML=histHtml||'<tr><td colspan="5" class="empty">История пуста</td></tr>';
+  document.getElementById("recentHistoryTable").innerHTML=hist.slice(0,6).map(h=>{const c=h.client_id?clientById(h.client_id):null;return '<tr><td>'+new Date(h.event_date).toLocaleDateString("ru-RU")+'</td><td>'+h.event_type+'</td><td>'+h.description+'</td><td>'+(c?c.company_name:"—")+'</td><td>'+(h.amount?rub(h.amount):"—")+'</td></tr>';}).join("")||'<tr><td colspan="5" class="empty">Операций пока нет</td></tr>';
 
-      document.getElementById('writeoffTable').innerHTML=state.writeoffs.slice().reverse().map(w=>{const i=itemById(w.itemId);return '<tr><td>'+dateRu(w.date)+'</td><td>'+(i?i.name+' · '+i.color:'Позиция удалена')+'</td><td>'+w.qty+' шт.</td><td>'+w.reason+'</td><td>'+rub(w.cost)+'</td></tr>';}).join('')||'<tr><td colspan="5" class="empty">Списаний нет</td></tr>';
+  fillSelects();
+  bindDynamicButtons();
+}
+function fillSelects(){
+  document.getElementById("orderClient").innerHTML=state.clients.map(c=>'<option value="'+c.id+'">'+c.company_name+'</option>').join("");
+  const open=state.orders.filter(o=>o.status==="draft"||o.status==="reserved");
+  document.getElementById("purchaseTarget").innerHTML='<option value="">Свободный склад</option>'+open.map(o=>'<option value="'+o.id+'">Заказ #'+o.order_no+' · '+(clientById(o.client_id)?.company_name||"")+'</option>').join("");
+  document.getElementById("expenseOrder").innerHTML='<option value="">Общий расход</option>'+state.orders.map(o=>'<option value="'+o.id+'">#'+o.order_no+' · '+(clientById(o.client_id)?.company_name||"")+'</option>').join("");
+  document.getElementById("writeoffItem").innerHTML=state.inventory.map(i=>'<option value="'+i.id+'">'+i.name+' · '+i.color+' · свободно '+freeQty(i)+' шт.</option>').join("");
+}
+function bindDynamicButtons(){
+  document.querySelectorAll("[data-release]").forEach(b=>b.onclick=()=>releaseReserve(b.dataset.release));
+  document.querySelectorAll("[data-ship]").forEach(b=>b.onclick=()=>shipOrder(b.dataset.ship));
+}
+function openModal(id){
+  document.getElementById(id+"Modal").classList.add("open");
+  const d=document.getElementById(id+"Date"); if(d&&!d.value)d.value=today();
+  if(id==="order"&&document.getElementById("reserveRows").children.length===0)addReserveRow();
+}
+function closeAll(){document.querySelectorAll(".modal-backdrop").forEach(m=>m.classList.remove("open"));}
+function addReserveRow(){
+  const wrap=document.getElementById("reserveRows"),row=document.createElement("div"); row.className="reserve-row";
+  row.innerHTML='<div><label>Позиция</label><select class="field-select reserve-item">'+state.inventory.filter(i=>freeQty(i)>0).map(i=>'<option value="'+i.id+'">'+i.name+' · '+i.color+' · свободно '+freeQty(i)+'</option>').join("")+'</select></div><div><label>Кол-во</label><input class="field reserve-qty" type="number" min="1" value="1"></div><button class="danger-btn" type="button">×</button>';
+  row.querySelector(".danger-btn").onclick=()=>row.remove(); wrap.appendChild(row);
+}
+async function mutate(action,payload){
+  try{await api(action,payload);closeAll();await loadData();}catch(e){alert(e.message);}
+}
+async function releaseReserve(id){
+  if(!confirm("Удалить резерв? Цветы снова станут свободными на складе."))return;
+  await mutate("releaseReserve",{order_id:id});
+}
+async function shipOrder(id){
+  if(!confirm("Подтвердить отгрузку? После этого цветы спишутся со склада, а выручка и прибыль будут признаны."))return;
+  await mutate("shipOrder",{order_id:id});
+}
 
-      document.getElementById('ordersTable').innerHTML=state.orders.slice().sort((a,b)=>b.id-a.id).map(o=>{
-        const c=clientById(o.clientId), cogs=orderCogs(o), profit=o.status==='shipped'?orderProfit(o):0;
-        return '<tr><td>#'+o.id+'</td><td>'+c.company+'</td><td>'+dateRu(o.date)+'</td><td>'+(o.model==='subscription'?'Подписка':'Разовый')+'</td><td>'+rub(o.price)+'</td><td>'+rub(cogs)+'</td><td>'+(o.status==='shipped'?rub(profit):'—')+'</td><td>'+badgeStatus(o.status)+'</td></tr>';
-      }).join('');
+document.querySelectorAll(".nav-btn").forEach(btn=>btn.addEventListener("click",()=>showPage(btn.dataset.page)));
+document.querySelectorAll("[data-open]").forEach(btn=>btn.addEventListener("click",()=>openModal(btn.dataset.open)));
+document.querySelectorAll("[data-close]").forEach(btn=>btn.addEventListener("click",closeAll));
+document.querySelectorAll(".modal-backdrop").forEach(m=>m.addEventListener("click",e=>{if(e.target===m)closeAll();}));
+document.getElementById("loginBtn").onclick=login;
+document.getElementById("passwordInput").addEventListener("keydown",e=>{if(e.key==="Enter")login();});
+document.getElementById("clientModel").addEventListener("change",e=>document.getElementById("subscriptionFields").classList.toggle("hidden",e.target.value!=="subscription"));
+document.getElementById("addReserveRow").onclick=addReserveRow;
+document.getElementById("openExpense").onclick=()=>openModal("expense");
+document.getElementById("openWriteoff").onclick=()=>openModal("writeoff");
 
-      document.getElementById('clientsTable').innerHTML=state.clients.map(c=>{
-        const earned=state.orders.filter(o=>o.clientId===c.id&&o.status==='shipped').reduce((s,o)=>s+o.price,0);
-        return '<tr><td><strong>'+c.company+'</strong></td><td>'+(c.inn||'—')+'</td><td>'+c.contact+'</td><td><span class="badge">'+c.status+'</span></td><td>'+(c.model==='subscription'?'Подписка':'Разовые поставки')+'</td><td>'+rub(c.paid||0)+'</td><td>'+rub(earned)+'</td></tr>';
-      }).join('');
+document.getElementById("saveClient").onclick=async()=>{
+  const company=document.getElementById("clientCompany").value.trim(),model=document.getElementById("clientModel").value;
+  if(!company){alert("Укажи название компании.");return;}
+  const payload={company_name:company,inn:document.getElementById("clientInn").value.trim(),contact_name:document.getElementById("clientContact").value.trim(),contact_info:document.getElementById("clientPhone").value.trim(),status:document.getElementById("clientStatus").value,work_model:model,initial_payment:model==="subscription"?Number(document.getElementById("subPaid").value||0):0,subscription:null};
+  if(model==="subscription")payload.subscription={start_date:document.getElementById("subStart").value||today(),months:Number(document.getElementById("subMonths").value||1),deliveries_per_month:Number(document.getElementById("subDeliveries").value||3),bouquet_price:Number(document.getElementById("subBouquetPrice").value||0),discount_percent:Number(document.getElementById("subDiscount").value||0)};
+  await mutate("createClient",{payload});
+};
+document.getElementById("saveOrder").onclick=async()=>{
+  const clientId=document.getElementById("orderClient").value;if(!clientId){alert("Сначала создай клиента.");return;}
+  const rows=[...document.querySelectorAll("#reserveRows .reserve-row")],res=[];
+  for(const row of rows){const item_id=row.querySelector(".reserve-item").value,quantity=Number(row.querySelector(".reserve-qty").value);if(item_id&&quantity>0){const old=res.find(x=>x.item_id===item_id);if(old)old.quantity+=quantity;else res.push({item_id,quantity});}}
+  const client=clientById(clientId);
+  let subscription_id=null;
+  if(document.getElementById("orderModel").value==="subscription")subscription_id=state.subscriptions.find(s=>s.client_id===clientId&&s.status==="active")?.id||null;
+  const payload={client_id:clientId,subscription_id,delivery_date:document.getElementById("orderDate").value||today(),sale_price:Number(document.getElementById("orderPrice").value||0),note:document.getElementById("orderNote").value.trim(),reservations:res};
+  await mutate("createOrder",{payload}); document.getElementById("reserveRows").innerHTML="";
+};
+document.getElementById("savePurchase").onclick=async()=>{
+  const name=document.getElementById("purchaseName").value.trim(),qty=Number(document.getElementById("purchaseQty").value),unit=Number(document.getElementById("purchaseUnitCost").value);
+  if(!name||qty<=0||unit<0){alert("Заполни цветок, количество и стоимость.");return;}
+  const payload={purchase_date:document.getElementById("purchaseDate").value||today(),supplier:document.getElementById("purchaseSupplier").value.trim(),target_order_id:document.getElementById("purchaseTarget").value||null,items:[{category:document.getElementById("purchaseType").value,name,color:document.getElementById("purchaseColor").value.trim()||"Без цвета",quantity:qty,unit_cost:unit}]};
+  await mutate("createPurchase",{payload});
+};
+document.getElementById("saveExpense").onclick=async()=>{
+  const amount=Number(document.getElementById("expenseAmount").value);if(amount<=0){alert("Укажи сумму расхода.");return;}
+  await mutate("createExpense",{payload:{expense_date:document.getElementById("expenseDate").value||today(),category:document.getElementById("expenseCategory").value,description:document.getElementById("expenseDescription").value.trim(),amount,order_id:document.getElementById("expenseOrder").value||null}});
+};
+document.getElementById("saveWriteoff").onclick=async()=>{
+  const item=document.getElementById("writeoffItem").value,quantity=Number(document.getElementById("writeoffQty").value);if(!item||quantity<=0){alert("Выбери позицию и количество.");return;}
+  await mutate("createWriteoff",{payload:{item_id:item,quantity,reason:document.getElementById("writeoffReason").value}});
+};
 
-      document.getElementById('subscriptionsTable').innerHTML=state.subscriptions.map(s=>{
-        const c=clientById(s.clientId), total=s.months*s.perMonth, pct=Math.min(100,Math.round((s.delivered/total)*100));
-        return '<tr><td><strong>'+c.company+'</strong></td><td>'+dateRu(s.start)+' · '+s.months+' мес.</td><td>'+s.delivered+' из '+total+'</td><td>'+rub(s.bouquetPrice)+'</td><td>'+rub(s.paid)+'</td><td><div class="progress-row"><div>'+pct+'%</div><div class="progress"><span style="width:'+pct+'%"></span></div></div></td><td><span class="badge '+(s.status==='Активна'?'ok':'warn')+'">'+s.status+'</span></td></tr>';
-      }).join('');
-
-      document.getElementById('expensesTable').innerHTML=state.expenses.slice().reverse().map(e=>{
-        const o=orderById(e.orderId), c=o?clientById(o.clientId):null;
-        return '<tr><td>'+dateRu(e.date)+'</td><td>'+e.category+'</td><td>'+e.description+'</td><td>'+(o?c.company+' · #'+o.id:'Общий расход')+'</td><td>'+rub(e.amount)+'</td></tr>';
-      }).join('')||'<tr><td colspan="5" class="empty">Расходов нет</td></tr>';
-
-      const historyRows=state.history.slice().sort((a,b)=>b.id-a.id);
-      const historyHtml=historyRows.map(h=>{
-        const c=h.clientId?clientById(h.clientId):null;
-        return '<tr><td>'+dateRu(h.date)+'</td><td>'+h.type+'</td><td>'+h.description+'</td><td>'+(c?c.company:'—')+'</td><td>'+(h.amount?rub(h.amount):'—')+'</td></tr>';
-      }).join('');
-      document.getElementById('historyTable').innerHTML=historyHtml||'<tr><td colspan="5" class="empty">История пуста</td></tr>';
-      document.getElementById('recentHistoryTable').innerHTML=historyRows.slice(0,6).map(h=>{
-        const c=h.clientId?clientById(h.clientId):null;
-        return '<tr><td>'+dateRu(h.date)+'</td><td>'+h.type+'</td><td>'+h.description+'</td><td>'+(c?c.company:'—')+'</td><td>'+(h.amount?rub(h.amount):'—')+'</td></tr>';
-      }).join('');
-
-      fillSelects();
-      save();
-    }
-
-    function fillSelects(){
-      const clientOpts=state.clients.map(c=>'<option value="'+c.id+'">'+c.company+'</option>').join('');
-      document.getElementById('orderClient').innerHTML=clientOpts;
-      const openOrders=state.orders.filter(o=>o.status==='reserved'||o.status==='draft');
-      document.getElementById('purchaseTarget').innerHTML='<option value="">Свободный склад</option>'+openOrders.map(o=>'<option value="'+o.id+'">Заказ #'+o.id+' · '+clientById(o.clientId).company+'</option>').join('');
-      document.getElementById('expenseOrder').innerHTML='<option value="">Общий расход</option>'+state.orders.map(o=>'<option value="'+o.id+'">#'+o.id+' · '+clientById(o.clientId).company+'</option>').join('');
-      document.getElementById('writeoffItem').innerHTML=state.inventory.map(i=>'<option value="'+i.id+'">'+i.name+' · '+i.color+' · свободно '+freeQty(i)+' шт.</option>').join('');
-    }
-
-    function openModal(id){
-      document.getElementById(id+'Modal').classList.add('open');
-      const dateEl=document.getElementById(id+'Date');
-      if(dateEl&&!dateEl.value) dateEl.value=today();
-      if(id==='order'&&document.getElementById('reserveRows').children.length===0) addReserveRow();
-    }
-    function closeAll(){document.querySelectorAll('.modal-backdrop').forEach(m=>m.classList.remove('open'));}
-
-    function addReserveRow(){
-      const wrap=document.getElementById('reserveRows');
-      const row=document.createElement('div');
-      row.className='reserve-row';
-      row.innerHTML='<div><label>Позиция</label><select class="field-select reserve-item">'+state.inventory.filter(i=>freeQty(i)>0).map(i=>'<option value="'+i.id+'">'+i.name+' · '+i.color+' · свободно '+freeQty(i)+'</option>').join('')+'</select></div><div><label>Кол-во</label><input class="field reserve-qty" type="number" min="1" value="1"></div><button class="danger-btn" type="button">×</button>';
-      row.querySelector('.danger-btn').onclick=()=>row.remove();
-      wrap.appendChild(row);
-    }
-
-    function releaseReserve(id){
-      const o=orderById(id);
-      if(!o||o.status!=='reserved') return;
-      if(!confirm('Удалить резерв по заказу #'+id+'? Цветы снова станут свободными на складе.')) return;
-      o.status='draft';
-      state.history.push({id:Date.now(),date:today(),type:'Снят резерв',description:'Заказ #'+id,clientId:o.clientId,amount:0});
-      render();
-    }
-
-    function shipOrder(id){
-      const o=orderById(id);
-      if(!o||o.status!=='reserved') return;
-      if(!confirm('Подтвердить отгрузку заказа #'+id+'? После подтверждения цветы физически спишутся со склада, а выручка и прибыль будут признаны.')) return;
-      for(const r of o.reserve){
-        const item=itemById(r.itemId);
-        if(!item||item.qty<r.qty){alert('Недостаточно товара на складе: '+(item?item.name:'позиция'));return;}
-      }
-      o.reserve.forEach(r=>{ itemById(r.itemId).qty-=r.qty; });
-      o.status='shipped';
-      const sub=state.subscriptions.find(s=>s.clientId===o.clientId&&o.model==='subscription'&&s.status==='Активна');
-      if(sub) sub.delivered+=1;
-      state.history.push({id:Date.now(),date:today(),type:'Отгрузка',description:'Заказ #'+id+' подтверждён',clientId:o.clientId,amount:o.price});
-      render();
-    }
-
-    document.querySelectorAll('.nav-btn').forEach(btn=>btn.addEventListener('click',()=>showPage(btn.dataset.page)));
-    document.querySelectorAll('[data-open]').forEach(btn=>btn.addEventListener('click',()=>openModal(btn.dataset.open)));
-    document.querySelectorAll('[data-close]').forEach(btn=>btn.addEventListener('click',closeAll));
-    document.querySelectorAll('.modal-backdrop').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeAll();}));
-
-    document.getElementById('loginBtn').onclick=login;
-    document.getElementById('passwordInput').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
-    function login(){
-      if(document.getElementById('passwordInput').value==='0302'){
-        document.getElementById('loginScreen').classList.add('hidden');
-        document.getElementById('app').classList.remove('hidden');
-        render();
-      }else document.getElementById('loginError').classList.remove('hidden');
-    }
-
-    document.getElementById('clientModel').addEventListener('change',e=>{
-      document.getElementById('subscriptionFields').classList.toggle('hidden',e.target.value!=='subscription');
-    });
-
-    document.getElementById('addReserveRow').onclick=addReserveRow;
-
-    document.getElementById('savePurchase').onclick=()=>{
-      const type=document.getElementById('purchaseType').value;
-      const name=document.getElementById('purchaseName').value.trim();
-      const color=document.getElementById('purchaseColor').value.trim()||'Без цвета';
-      const qty=Number(document.getElementById('purchaseQty').value);
-      const unitCost=Number(document.getElementById('purchaseUnitCost').value);
-      const date=document.getElementById('purchaseDate').value||today();
-      const supplier=document.getElementById('purchaseSupplier').value.trim();
-      const targetId=Number(document.getElementById('purchaseTarget').value)||null;
-      if(!name||qty<=0||unitCost<0){alert('Заполни цветок, количество и стоимость.');return;}
-      let item=state.inventory.find(i=>i.type===type&&i.name.toLowerCase()===name.toLowerCase()&&i.color.toLowerCase()===color.toLowerCase());
-      if(item){
-        const oldValue=item.qty*item.cost, addValue=qty*unitCost;
-        item.cost=(oldValue+addValue)/(item.qty+qty);
-        item.qty+=qty;
-      }else{
-        item={id:Date.now(),type,name,color,qty,cost:unitCost};
-        state.inventory.push(item);
-      }
-      let target='Свободный склад';
-      if(targetId){
-        const o=orderById(targetId);
-        if(o){
-          const existing=o.reserve.find(r=>r.itemId===item.id);
-          if(existing) existing.qty+=qty; else o.reserve.push({itemId:item.id,qty});
-          o.status='reserved';
-          target='Заказ #'+o.id+' · '+clientById(o.clientId).company;
-        }
-      }
-      state.purchases.push({id:Date.now(),date,type,name,color,qty,unitCost,supplier,target});
-      state.history.push({id:Date.now()+1,date,type:'Закупка',description:name+' '+color+', '+qty+' шт.',clientId:targetId?orderById(targetId).clientId:null,amount:qty*unitCost});
-      document.getElementById('purchaseName').value='';
-      document.getElementById('purchaseColor').value='';
-      closeAll();render();
-    };
-
-    document.getElementById('saveClient').onclick=()=>{
-      const company=document.getElementById('clientCompany').value.trim();
-      if(!company){alert('Укажи название компании.');return;}
-      const id=Date.now(), model=document.getElementById('clientModel').value;
-      const paid=model==='subscription'?Number(document.getElementById('subPaid').value)||0:0;
-      state.clients.push({id,company,inn:document.getElementById('clientInn').value.trim(),contact:document.getElementById('clientContact').value.trim()||'—',phone:document.getElementById('clientPhone').value.trim(),status:document.getElementById('clientStatus').value,model,paid});
-      if(model==='subscription'){
-        const start=document.getElementById('subStart').value||today();
-        const months=Number(document.getElementById('subMonths').value)||1;
-        const perMonth=Number(document.getElementById('subDeliveries').value)||3;
-        const bouquetPrice=Number(document.getElementById('subBouquetPrice').value)||0;
-        state.subscriptions.push({id:Date.now()+1,clientId:id,start,months,perMonth,bouquetPrice,discount:Number(document.getElementById('subDiscount').value)||0,paid,delivered:0,status:'Активна'});
-      }
-      state.history.push({id:Date.now()+2,date:today(),type:'Клиент',description:'Создан клиент '+company,clientId:id,amount:paid});
-      closeAll();render();
-    };
-
-    document.getElementById('saveOrder').onclick=()=>{
-      const clientId=Number(document.getElementById('orderClient').value);
-      const model=document.getElementById('orderModel').value;
-      const date=document.getElementById('orderDate').value||today();
-      const price=Number(document.getElementById('orderPrice').value)||0;
-      const rows=[...document.querySelectorAll('#reserveRows .reserve-row')];
-      const reserve=[];
-      for(const row of rows){
-        const itemId=Number(row.querySelector('.reserve-item').value);
-        const qty=Number(row.querySelector('.reserve-qty').value);
-        if(!itemId||qty<=0) continue;
-        const existing=reserve.find(r=>r.itemId===itemId);
-        if(existing) existing.qty+=qty; else reserve.push({itemId,qty});
-      }
-      for(const r of reserve){
-        const item=itemById(r.itemId);
-        if(r.qty>freeQty(item)){alert('Недостаточно свободного остатка: '+item.name+' '+item.color);return;}
-      }
-      const id=Math.max(100,...state.orders.map(o=>o.id))+1;
-      const status=reserve.length?'reserved':'draft';
-      state.orders.push({id,clientId,model,date,price,status,reserve,note:document.getElementById('orderNote').value.trim()});
-      state.history.push({id:Date.now(),date:today(),type:reserve.length?'Резерв':'Заказ',description:'Создан заказ #'+id+(reserve.length?' и резерв':'') ,clientId,amount:0});
-      document.getElementById('reserveRows').innerHTML='';
-      document.getElementById('orderPrice').value='';
-      document.getElementById('orderNote').value='';
-      closeAll();render();
-    };
-
-    document.getElementById('openExpense').onclick=()=>openModal('expense');
-    document.getElementById('saveExpense').onclick=()=>{
-      const amount=Number(document.getElementById('expenseAmount').value);
-      if(amount<=0){alert('Укажи сумму расхода.');return;}
-      const orderId=Number(document.getElementById('expenseOrder').value)||null;
-      const e={id:Date.now(),date:document.getElementById('expenseDate').value||today(),category:document.getElementById('expenseCategory').value,description:document.getElementById('expenseDescription').value.trim()||'Без описания',amount,orderId};
-      state.expenses.push(e);
-      state.history.push({id:Date.now()+1,date:e.date,type:'Расход',description:e.category+' · '+e.description,clientId:orderId?orderById(orderId).clientId:null,amount});
-      closeAll();render();
-    };
-
-    document.getElementById('openWriteoff').onclick=()=>openModal('writeoff');
-    document.getElementById('saveWriteoff').onclick=()=>{
-      const itemId=Number(document.getElementById('writeoffItem').value), qty=Number(document.getElementById('writeoffQty').value), item=itemById(itemId);
-      if(!item||qty<=0||qty>freeQty(item)){alert('Нельзя списать больше свободного остатка.');return;}
-      item.qty-=qty;
-      const cost=qty*item.cost, reason=document.getElementById('writeoffReason').value;
-      state.writeoffs.push({id:Date.now(),date:today(),itemId,qty,reason,cost});
-      state.history.push({id:Date.now()+1,date:today(),type:'Списание',description:item.name+' '+item.color+', '+qty+' шт. · '+reason,clientId:null,amount:cost});
-      closeAll();render();
-    };
-
-    window.releaseReserve=releaseReserve;
-    window.shipOrder=shipOrder;
-    fillSelects();
-  </script>
+(async()=>{
+  if(sessionToken){
+    try{showApp();await loadData();}catch(e){showLogin();}
+  }else showLogin();
+})();
+</script>
 </body>
 </html>
