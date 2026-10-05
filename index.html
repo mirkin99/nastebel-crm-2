@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NASTEBEL CRM</title>
+  <style>
+    :root{
+      --bg:#111315;
+      --panel:#181b1e;
+      --panel-2:#1e2226;
+      --line:#2a2f34;
+      --text:#f3f4f4;
+      --muted:#8e969d;
+      --soft:#c8cdd1;
+      --accent:#e7ece8;
+      --accent-text:#151817;
+      --ok:#6f9f7d;
+      --warn:#b99a63;
+      --danger:#b26d6d;
+      --radius:16px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    button,input,select,textarea{font:inherit}
+    button{cursor:pointer}
+    .hidden{display:none!important}
+    .login{min-height:100vh;display:grid;place-items:center;padding:24px;background:
+      radial-gradient(circle at 20% 10%,rgba(255,255,255,.035),transparent 30%),
+      radial-gradient(circle at 80% 80%,rgba(255,255,255,.025),transparent 35%),var(--bg)}
+    .login-card{width:min(420px,100%);background:rgba(24,27,30,.94);border:1px solid var(--line);border-radius:24px;padding:42px;box-shadow:0 28px 90px rgba(0,0,0,.35)}
+    .brand{font-size:23px;letter-spacing:.18em;font-weight:700}
+    .brand-sub{margin-top:8px;color:var(--muted);font-size:13px}
+    .login-card input{margin-top:28px}
+    .field,.field-select,.field-area{width:100%;background:#121416;border:1px solid #343a40;color:var(--text);border-radius:11px;padding:12px 13px;outline:none}
+    .field:focus,.field-select:focus,.field-area:focus{border-color:#687078}
+    .field-area{resize:vertical;min-height:82px}
+    .primary,.secondary,.ghost,.danger-btn,.small-btn{border:0;border-radius:10px;padding:11px 14px;transition:.18s ease}
+    .primary{background:var(--accent);color:var(--accent-text);font-weight:700}
+    .primary:hover{transform:translateY(-1px);background:#fff}
+    .secondary{background:#282d31;color:var(--text);border:1px solid #343a40}
+    .ghost{background:transparent;color:var(--soft);border:1px solid var(--line)}
+    .danger-btn{background:#382526;color:#efc8c8;border:1px solid #593537}
+    .small-btn{padding:7px 10px;background:#252a2e;color:var(--soft);border:1px solid #343a40;font-size:12px}
+    .login-card .primary{width:100%;margin-top:12px}
+    .login-error{color:#d68a8a;font-size:13px;margin-top:12px}
+
+    .app{min-height:100vh}
+    .sidebar{position:fixed;inset:0 auto 0 0;width:246px;background:#15181a;border-right:1px solid var(--line);padding:26px 16px;overflow:auto}
+    .sidebar .brand{padding:0 12px 28px;font-size:19px}
+    .nav-label{font-size:10px;letter-spacing:.13em;color:#606970;text-transform:uppercase;padding:12px 12px 7px}
+    .nav-btn{width:100%;display:flex;align-items:center;gap:10px;border:0;background:transparent;color:#9ba3aa;padding:10px 12px;border-radius:10px;text-align:left;margin:2px 0}
+    .nav-btn:hover,.nav-btn.active{background:#22262a;color:#fff}
+    .dot{width:7px;height:7px;border-radius:50%;background:#5b636a}
+    .nav-btn.active .dot{background:#e9ecea}
+    .main{margin-left:246px;min-height:100vh;padding:34px 38px 60px}
+    .topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;margin-bottom:28px}
+    .title h1{margin:0;font-size:30px;font-weight:650;letter-spacing:-.03em}
+    .title p{margin:7px 0 0;color:var(--muted);font-size:13px}
+    .actions{display:flex;gap:9px;flex-wrap:wrap}
+    .page{display:none}
+    .page.active{display:block}
+    .kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:18px}
+    .kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+    .kpi-label{color:var(--muted);font-size:12px;min-height:30px}
+    .kpi-value{font-size:24px;font-weight:650;margin-top:8px;letter-spacing:-.03em}
+    .kpi-note{font-size:11px;color:#69727a;margin-top:7px}
+    .grid-2{display:grid;grid-template-columns:1.25fr .75fr;gap:16px}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+    .card-head{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:16px}
+    .card h2{font-size:17px;margin:0;font-weight:620}
+    .card-desc{font-size:12px;color:var(--muted);margin-top:5px}
+    .table-wrap{overflow:auto}
+    table{width:100%;border-collapse:collapse;min-width:680px}
+    th{text-align:left;color:#69727a;font-size:11px;text-transform:uppercase;letter-spacing:.06em;font-weight:600;padding:10px 12px;border-bottom:1px solid var(--line)}
+    td{padding:13px 12px;border-bottom:1px solid #24292d;font-size:13px;color:#d7dadd;vertical-align:middle}
+    tr:last-child td{border-bottom:0}
+    .badge{display:inline-flex;align-items:center;border-radius:999px;padding:5px 8px;font-size:11px;background:#252a2e;color:#bdc3c8;border:1px solid #33393e}
+    .badge.ok{background:#213027;color:#9bc3a6;border-color:#314638}
+    .badge.warn{background:#332d22;color:#d4bc88;border-color:#4a402e}
+    .badge.danger{background:#382526;color:#dda6a6;border-color:#573739}
+    .progress{height:7px;background:#272c30;border-radius:999px;overflow:hidden;margin-top:7px}
+    .progress > span{display:block;height:100%;background:#dce2de;border-radius:999px}
+    .progress-row{min-width:160px}
+    .metric-list{display:grid;gap:12px}
+    .metric-line{display:flex;justify-content:space-between;gap:20px;font-size:13px;padding:10px 0;border-bottom:1px solid #252a2e}
+    .metric-line:last-child{border-bottom:0}
+    .metric-line span:first-child{color:var(--muted)}
+    .section-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .segmented{display:inline-flex;background:#121416;border:1px solid var(--line);border-radius:10px;padding:3px}
+    .segmented button{border:0;background:transparent;color:var(--muted);padding:7px 11px;border-radius:7px}
+    .segmented button.active{background:#292e32;color:#fff}
+    .empty{padding:28px;text-align:center;color:var(--muted);font-size:13px}
+
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}
+    .modal-backdrop.open{display:flex}
+    .modal{width:min(720px,100%);max-height:90vh;overflow:auto;background:#191c1f;border:1px solid #343a40;border-radius:20px;padding:22px;box-shadow:0 30px 100px rgba(0,0,0,.55)}
+    .modal.small{width:min(520px,100%)}
+    .modal-head{display:flex;justify-content:space-between;gap:20px;align-items:center;margin-bottom:18px}
+    .modal-head h3{margin:0;font-size:20px}
+    .x{border:0;background:transparent;color:#899198;font-size:24px}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+    .form-grid .full{grid-column:1/-1}
+    label{display:block;color:#8e969d;font-size:11px;margin-bottom:6px}
+    .modal-footer{display:flex;justify-content:flex-end;gap:9px;margin-top:20px}
+    .reserve-row{display:grid;grid-template-columns:1fr 110px auto;gap:8px;align-items:end;margin-bottom:8px}
+    .notice{background:#131619;border:1px solid #2e3439;border-radius:12px;padding:12px 13px;color:#9ea6ad;font-size:12px;line-height:1.5}
+    .notice strong{color:#dfe3e5}
+    .tabs{display:flex;gap:6px;margin-bottom:16px}
+    .tab{background:#1e2226;border:1px solid var(--line);color:#929aa1;padding:8px 11px;border-radius:9px}
+    .tab.active{background:#2a2f34;color:#fff}
+    .order-reserve{display:flex;gap:6px;flex-wrap:wrap}
+    .reserve-pill{font-size:11px;background:#23282c;border:1px solid #343a40;border-radius:999px;padding:5px 8px;color:#c6cbd0}
+    .status-select{background:#22272b;color:#ddd;border:1px solid #343a40;border-radius:8px;padding:6px 8px}
+    @media(max-width:1250px){.kpis{grid-template-columns:repeat(3,1fr)}}
+    @media(max-width:900px){
+      .sidebar{position:static;width:auto;height:auto;display:flex;gap:6px;overflow:auto;padding:12px;border-right:0;border-bottom:1px solid var(--line)}
+      .sidebar .brand,.nav-label{display:none}.nav-btn{white-space:nowrap;width:auto}.main{margin-left:0;padding:22px}.topbar{flex-direction:column}.grid-2{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}
+    }
+    @media(max-width:620px){.kpis{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.form-grid .full{grid-column:auto}.actions{width:100%}.actions button{flex:1}.reserve-row{grid-template-columns:1fr 80px auto}}
+  </style>
+</head>
+<body>
+  <section class="login" id="loginScreen">
+    <div class="login-card">
+      <div class="brand">NASTEBEL</div>
+      <div class="brand-sub">CRM · склад · клиенты · подписки · прибыль</div>
+      <input class="field" id="passwordInput" type="password" placeholder="Введите пароль" autocomplete="current-password">
+      <button class="primary" id="loginBtn">Войти</button>
+      <div class="login-error hidden" id="loginError">Неверный пароль</div>
+    </div>
+  </section>
+
+  <div class="app hidden" id="app">
+    <aside class="sidebar">
+      <div class="brand">NASTEBEL</div>
+
+      <div class="nav-label">Основное</div>
+      <button class="nav-btn active" data-page="dashboard"><span class="dot"></span>Главная</button>
+
+      <div class="nav-label">Склад</div>
+      <button class="nav-btn" data-page="fresh"><span class="dot"></span>Свежие цветы</button>
+      <button class="nav-btn" data-page="dried"><span class="dot"></span>Сухоцветы</button>
+      <button class="nav-btn" data-page="purchases"><span class="dot"></span>Закупки</button>
+      <button class="nav-btn" data-page="writeoffs"><span class="dot"></span>Списания</button>
+
+      <div class="nav-label">Продажи</div>
+      <button class="nav-btn" data-page="orders"><span class="dot"></span>Заказы</button>
+      <button class="nav-btn" data-page="clients"><span class="dot"></span>Клиенты</button>
+      <button class="nav-btn" data-page="subscriptions"><span class="dot"></span>Подписки</button>
+
+      <div class="nav-label">Финансы</div>
+      <button class="nav-btn" data-page="expenses"><span class="dot"></span>Расходы</button>
+      <button class="nav-btn" data-page="reports"><span class="dot"></span>Отчёты</button>
+
+      <div class="nav-label">Система</div>
+      <button class="nav-btn" data-page="history"><span class="dot"></span>История</button>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="title">
+          <h1 id="pageTitle">Главная</h1>
+          <p id="pageSubtitle">Общая картина бизнеса на сегодня</p>
+        </div>
+        <div class="actions">
+          <button class="secondary" data-open="purchase">+ Закупка</button>
+          <button class="secondary" data-open="client">+ Клиент</button>
+          <button class="primary" data-open="order">+ Заказ</button>
+        </div>
+      </header>
+
+      <section class="page active" id="page-dashboard">
+        <div class="kpis" id="kpiGrid"></div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h2>Активные резервы</h2>
+                <div class="card-desc">Резерв привязан к конкретному заказу, а не просто к клиенту</div>
+              </div>
+            </div>
+            <div class="table-wrap"><table>
+              <thead><tr><th>Заказ</th><th>Клиент</th><th>Отгрузка</th><th>Резерв</th><th></th></tr></thead>
+              <tbody id="reserveTable"></tbody>
+            </table></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h2>Деньги</h2>
+                <div class="card-desc">Оплата и заработанная выручка считаются отдельно</div>
+              </div>
+            </div>
+            <div class="metric-list" id="moneySummary"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <h2>Ближайшие поставки</h2>
+              <div class="card-desc">Разовые заказы и поставки по подпискам</div>
+            </div>
+          </div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Дата</th><th>Клиент</th><th>Формат</th><th>Цена</th><th>Статус</th></tr></thead>
+            <tbody id="upcomingTable"></tbody>
+          </table></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><div><h2>Последние операции</h2><div class="card-desc">Все движения товара и денег</div></div></div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Дата</th><th>Операция</th><th>Объект</th><th>Клиент</th><th>Сумма</th></tr></thead>
+            <tbody id="recentHistoryTable"></tbody>
+          </table></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-fresh">
+        <div class="card">
+          <div class="card-head"><div><h2>Склад свежих цветов</h2><div class="card-desc">Вид цветка + цвет. Без углубления в сорта.</div></div></div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Цветок</th><th>Цвет</th><th>Всего</th><th>В резерве</th><th>Свободно</th><th>Ср. себестоимость</th></tr></thead>
+            <tbody id="freshTable"></tbody>
+          </table></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-dried">
+        <div class="card">
+          <div class="card-head"><div><h2>Склад сухоцветов</h2><div class="card-desc">Отдельный учёт от свежих цветов</div></div></div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Позиция</th><th>Цвет</th><th>Всего</th><th>В резерве</th><th>Свободно</th><th>Ср. себестоимость</th></tr></thead>
+            <tbody id="driedTable"></tbody>
+          </table></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-purchases">
+        <div class="card">
+          <div class="card-head"><div><h2>Закупки</h2><div class="card-desc">Каждая закупка сохраняет дату, цену и назначение</div></div></div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Дата</th><th>Категория</th><th>Позиция</th><th>Цвет</th><th>Количество</th><th>Цена / шт.</th><th>Сумма</th><th>Назначение</th></tr></thead>
+            <tbody id="purchaseTable"></tbody>
+          </table></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-writeoffs">
+        <div class="card">
+          <div class="card-head">
+            <div><h2>Списания</h2><div class="card-desc">Порча, подарок, техническое использование и другие причины</div></div>
+            <button class="secondary" id="openWriteoff">+ Списание</button>
+          </div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Дата</th><th>Позиция</th><th>Количество</th><th>Причина</th><th>Себестоимость</th></tr></thead>
+            <tbody id="writeoffTable"></tbody>
+          </table></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-orders">
+        <div class="card">
+          <div class="card-head"><div><h2>Заказы</h2><div class="card-desc">От создания и резерва до подтверждённой отгрузки</div></div></div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Заказ</th><th>Клиент</th><th>Дата</th><th>Формат</th><th>Цена</th><th>Себестоимость</th><th>Прибыль</th><th>Статус</th></tr></thead>
+            <tbody id="ordersTable"></tbody>
+          </table></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-clients">
+        <div class="card">
+          <div class="card-head"><div><h2>Клиенты</h2><div class="card-desc">Карточка клиента, статус, формат работы и история</div></div></div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Компания</th><th>ИНН</th><th>Контакт</th><th>Статус</th><th>Формат</th><th>Оплачено</th><th>Заработано</th></tr></thead>
+            <tbody id="clientsTable"></tbody>
+          </table></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-subscriptions">
+        <div class="card">
+          <div class="card-head"><div><h2>Подписки</h2><div class="card-desc">Срок, поставки и прогресс по каждому клиенту</div></div></div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Клиент</th><th>Период</th><th>Поставок</th><th>Цена букета</th><th>Оплата</th><th>Прогресс</th><th>Статус</th></tr></thead>
+            <tbody id="subscriptionsTable"></tbody>
+          </table></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-expenses">
+        <div class="card">
+          <div class="card-head">
+            <div><h2>Операционные расходы</h2><div class="card-desc">Упаковка, логистика, проволока, подарки и прочее</div></div>
+            <button class="secondary" id="openExpense">+ Расход</button>
+          </div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Дата</th><th>Категория</th><th>Описание</th><th>Клиент / заказ</th><th>Сумма</th></tr></thead>
+            <tbody id="expensesTable"></tbody>
+          </table></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-reports">
+        <div class="kpis" id="reportKpis"></div>
+        <div class="card">
+          <div class="card-head"><div><h2>Логика прибыли</h2><div class="card-desc">Предоплата не становится заработанной выручкой до фактической отгрузки</div></div></div>
+          <div class="notice">
+            <strong>Пример:</strong> клиент оплатил подписку на 15 000 ₽ за 3 поставки. До отгрузки это отображается как полученная оплата. После первой подтверждённой поставки на 5 000 ₽ система признаёт только эти 5 000 ₽ заработанной выручкой, вычитает фактическую себестоимость цветов и связанные расходы — и только тогда показывает прибыль по поставке.
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="page-history">
+        <div class="card">
+          <div class="card-head"><div><h2>История движений</h2><div class="card-desc">Закупки, резервы, снятие резерва, отгрузки, списания и расходы</div></div></div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Дата</th><th>Тип</th><th>Описание</th><th>Клиент</th><th>Сумма</th></tr></thead>
+            <tbody id="historyTable"></tbody>
+          </table></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="purchaseModal">
+    <div class="modal">
+      <div class="modal-head"><h3>Новая закупка</h3><button class="x" data-close>×</button></div>
+      <div class="form-grid">
+        <div><label>Склад</label><select class="field-select" id="purchaseType"><option value="fresh">Свежие цветы</option><option value="dried">Сухоцветы</option></select></div>
+        <div><label>Дата закупки</label><input class="field" id="purchaseDate" type="date"></div>
+        <div><label>Цветок / позиция</label><input class="field" id="purchaseName" list="flowerList" placeholder="Например, лилия"></div>
+        <div><label>Цвет</label><input class="field" id="purchaseColor" placeholder="Белый"></div>
+        <div><label>Количество</label><input class="field" id="purchaseQty" type="number" min="1" value="10"></div>
+        <div><label>Стоимость за 1 шт.</label><input class="field" id="purchaseUnitCost" type="number" min="0" step="0.01" placeholder="180"></div>
+        <div><label>Поставщик</label><input class="field" id="purchaseSupplier" placeholder="Опционально"></div>
+        <div><label>Назначение закупки</label><select class="field-select" id="purchaseTarget"><option value="">Свободный склад</option></select></div>
+        <div class="full notice">Если выбран заказ, закупленные цветы сразу попадут на общий склад и одновременно будут <strong>зарезервированы именно под этот заказ</strong>.</div>
+      </div>
+      <div class="modal-footer"><button class="ghost" data-close>Отмена</button><button class="primary" id="savePurchase">Сохранить закупку</button></div>
+    </div>
+  </div>
+
+  <datalist id="flowerList">
+    <option value="Альстромерия"><option value="Гвоздика"><option value="Гортензия"><option value="Лилия"><option value="Маттиола"><option value="Пион"><option value="Роза"><option value="Ромашка"><option value="Тюльпан"><option value="Хризантема"><option value="Эвкалипт">
+  </datalist>
+
+  <div class="modal-backdrop" id="clientModal">
+    <div class="modal">
+      <div class="modal-head"><h3>Новый клиент</h3><button class="x" data-close>×</button></div>
+      <div class="form-grid">
+        <div><label>Компания</label><input class="field" id="clientCompany" placeholder="Клиника ..."></div>
+        <div><label>ИНН</label><input class="field" id="clientInn" placeholder="7700000000"></div>
+        <div><label>Контактное лицо</label><input class="field" id="clientContact" placeholder="Имя"></div>
+        <div><label>Телефон / Telegram</label><input class="field" id="clientPhone" placeholder="+7 ..."></div>
+        <div><label>Статус клиента</label><select class="field-select" id="clientStatus"><option>Переговоры</option><option>В работе</option><option>Приостановлен</option><option>Завершён</option></select></div>
+        <div><label>Модель</label><select class="field-select" id="clientModel"><option value="one">Разовые поставки</option><option value="subscription">Подписка</option></select></div>
+      </div>
+      <div id="subscriptionFields" class="form-grid hidden" style="margin-top:13px">
+        <div><label>Дата начала подписки</label><input class="field" id="subStart" type="date"></div>
+        <div><label>Срок, месяцев</label><input class="field" id="subMonths" type="number" min="1" value="1"></div>
+        <div><label>Поставок в месяц</label><input class="field" id="subDeliveries" type="number" min="1" value="3"></div>
+        <div><label>Цена одного букета</label><input class="field" id="subBouquetPrice" type="number" min="0" placeholder="5000"></div>
+        <div><label>Получено оплаты</label><input class="field" id="subPaid" type="number" min="0" placeholder="15000"></div>
+        <div><label>Скидка, %</label><input class="field" id="subDiscount" type="number" min="0" max="100" value="0"></div>
+      </div>
+      <div class="modal-footer"><button class="ghost" data-close>Отмена</button><button class="primary" id="saveClient">Создать клиента</button></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="orderModal">
+    <div class="modal">
+      <div class="modal-head"><h3>Новый заказ</h3><button class="x" data-close>×</button></div>
+      <div class="form-grid">
+        <div><label>Клиент</label><select class="field-select" id="orderClient"></select></div>
+        <div><label>Формат</label><select class="field-select" id="orderModel"><option value="subscription">По подписке</option><option value="one">Разовый</option></select></div>
+        <div><label>Дата отгрузки</label><input class="field" id="orderDate" type="date"></div>
+        <div><label>Стоимость букета / поставки</label><input class="field" id="orderPrice" type="number" min="0" placeholder="5000"></div>
+        <div class="full"><label>Комментарий</label><textarea class="field-area" id="orderNote" placeholder="Референс, пожелания, адрес и т.д."></textarea></div>
+        <div class="full">
+          <div class="card-head" style="margin:4px 0 8px"><div><h2 style="font-size:14px">Резерв цветов</h2><div class="card-desc">Можно добавить несколько позиций. Физически со склада они уйдут только после подтверждения отгрузки.</div></div><button class="small-btn" id="addReserveRow" type="button">+ Позиция</button></div>
+          <div id="reserveRows"></div>
+        </div>
+      </div>
+      <div class="modal-footer"><button class="ghost" data-close>Отмена</button><button class="primary" id="saveOrder">Создать заказ и резерв</button></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="expenseModal">
+    <div class="modal small">
+      <div class="modal-head"><h3>Добавить расход</h3><button class="x" data-close>×</button></div>
+      <div class="form-grid">
+        <div><label>Дата</label><input class="field" id="expenseDate" type="date"></div>
+        <div><label>Категория</label><select class="field-select" id="expenseCategory"><option>Упаковка</option><option>Логистика</option><option>Проволока / крепёж</option><option>Подарок клиенту</option><option>Прочее</option></select></div>
+        <div class="full"><label>Описание</label><input class="field" id="expenseDescription" placeholder="Что именно"></div>
+        <div><label>Сумма</label><input class="field" id="expenseAmount" type="number" min="0"></div>
+        <div><label>Привязать к заказу</label><select class="field-select" id="expenseOrder"><option value="">Общий расход</option></select></div>
+      </div>
+      <div class="modal-footer"><button class="ghost" data-close>Отмена</button><button class="primary" id="saveExpense">Сохранить</button></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="writeoffModal">
+    <div class="modal small">
+      <div class="modal-head"><h3>Новое списание</h3><button class="x" data-close>×</button></div>
+      <div class="form-grid">
+        <div class="full"><label>Позиция</label><select class="field-select" id="writeoffItem"></select></div>
+        <div><label>Количество</label><input class="field" id="writeoffQty" type="number" min="1" value="1"></div>
+        <div><label>Причина</label><select class="field-select" id="writeoffReason"><option>Увяло / испортилось</option><option>Повреждено</option><option>Подарок</option><option>Техническое использование</option><option>Ошибка закупки</option><option>Прочее</option></select></div>
+      </div>
+      <div class="modal-footer"><button class="ghost" data-close>Отмена</button><button class="primary" id="saveWriteoff">Списать</button></div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'nastebel-crm-demo-v3';
+    const today = () => new Date().toISOString().slice(0,10);
+    const rub = n => new Intl.NumberFormat('ru-RU',{maximumFractionDigits:0}).format(Math.round(Number(n)||0)) + ' ₽';
+    const dateRu = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('ru-RU') : '—';
+
+    const seed = {
+      inventory:[
+        {id:1,type:'fresh',name:'Роза',color:'Белый',qty:40,cost:180},
+        {id:2,type:'fresh',name:'Эвкалипт',color:'Зелёный',qty:24,cost:110},
+        {id:3,type:'fresh',name:'Хризантема',color:'Белый',qty:32,cost:95},
+        {id:4,type:'fresh',name:'Лилия',color:'Розовый',qty:15,cost:230},
+        {id:5,type:'dried',name:'Лагурус',color:'Натуральный',qty:20,cost:120},
+        {id:6,type:'dried',name:'Статица',color:'Белый',qty:18,cost:90}
+      ],
+      clients:[
+        {id:1,company:'Клиника Диляры',inn:'7700000001',contact:'Диляра',phone:'',status:'В работе',model:'subscription',paid:15000},
+        {id:2,company:'Клиника Натальи',inn:'7700000002',contact:'Наталья',phone:'',status:'В работе',model:'one',paid:7000},
+        {id:3,company:'Кофейня',inn:'',contact:'Соня',phone:'',status:'Переговоры',model:'subscription',paid:0}
+      ],
+      subscriptions:[
+        {id:1,clientId:1,start:'2026-10-01',months:1,perMonth:3,bouquetPrice:5000,discount:0,paid:15000,delivered:1,status:'Активна'},
+        {id:2,clientId:3,start:'2026-10-10',months:1,perMonth:3,bouquetPrice:3000,discount:0,paid:0,delivered:0,status:'Подготовка'}
+      ],
+      orders:[
+        {id:101,clientId:1,model:'subscription',date:'2026-10-10',price:5000,status:'shipped',reserve:[{itemId:1,qty:7},{itemId:2,qty:4}],note:''},
+        {id:102,clientId:1,model:'subscription',date:'2026-10-20',price:5000,status:'reserved',reserve:[{itemId:1,qty:8},{itemId:3,qty:5}],note:''},
+        {id:103,clientId:2,model:'one',date:'2026-10-12',price:7000,status:'reserved',reserve:[{itemId:5,qty:6},{itemId:6,qty:4}],note:''}
+      ],
+      purchases:[
+        {id:1,date:'2026-10-05',type:'fresh',name:'Роза',color:'Белый',qty:40,unitCost:180,supplier:'',target:'Свободный склад'},
+        {id:2,date:'2026-10-05',type:'fresh',name:'Эвкалипт',color:'Зелёный',qty:24,unitCost:110,supplier:'',target:'Свободный склад'},
+        {id:3,date:'2026-10-04',type:'dried',name:'Лагурус',color:'Натуральный',qty:20,unitCost:120,supplier:'',target:'Свободный склад'}
+      ],
+      expenses:[
+        {id:1,date:'2026-10-10',category:'Логистика',description:'Доставка в клинику',amount:450,orderId:101},
+        {id:2,date:'2026-10-10',category:'Упаковка',description:'Аквапак и лента',amount:180,orderId:101}
+      ],
+      writeoffs:[
+        {id:1,date:'2026-10-08',itemId:3,qty:3,reason:'Увяло / испортилось',cost:285}
+      ],
+      history:[
+        {id:1,date:'2026-10-10',type:'Отгрузка',description:'Заказ #101 подтверждён',clientId:1,amount:5000},
+        {id:2,date:'2026-10-08',type:'Списание',description:'Хризантема, 3 шт.',clientId:null,amount:285},
+        {id:3,date:'2026-10-05',type:'Закупка',description:'Роза, 40 шт.',clientId:null,amount:7200}
+      ]
+    };
+
+    let state;
+    try{ state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || structuredClone(seed); }
+    catch(e){ state = structuredClone(seed); }
+
+    const save = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    const clientById = id => state.clients.find(x=>x.id===Number(id));
+    const itemById = id => state.inventory.find(x=>x.id===Number(id));
+    const orderById = id => state.orders.find(x=>x.id===Number(id));
+
+    function reservedQty(itemId){
+      return state.orders.filter(o=>o.status==='reserved').reduce((sum,o)=>sum + o.reserve.filter(r=>r.itemId===itemId).reduce((s,r)=>s+r.qty,0),0);
+    }
+    function freeQty(item){ return Math.max(0,item.qty-reservedQty(item.id)); }
+    function orderCogs(order){
+      return order.reserve.reduce((sum,r)=>sum + (itemById(r.itemId)?.cost||0)*r.qty,0);
+    }
+    function orderExpenses(orderId){ return state.expenses.filter(e=>e.orderId===orderId).reduce((s,e)=>s+e.amount,0); }
+    function orderProfit(order){ return order.status==='shipped' ? order.price-orderCogs(order)-orderExpenses(order.id) : 0; }
+    function earnedRevenue(){ return state.orders.filter(o=>o.status==='shipped').reduce((s,o)=>s+o.price,0); }
+    function totalProfit(){ return state.orders.reduce((s,o)=>s+orderProfit(o),0) - state.writeoffs.reduce((s,w)=>s+w.cost,0); }
+    function totalPaid(){ return state.clients.reduce((s,c)=>s+(c.paid||0),0); }
+    function inventoryValue(){ return state.inventory.reduce((s,i)=>s+i.qty*i.cost,0); }
+    function reserveCount(){ return state.inventory.reduce((s,i)=>s+reservedQty(i.id),0); }
+
+    const pageMeta={
+      dashboard:['Главная','Общая картина бизнеса на сегодня'],
+      fresh:['Свежие цветы','Физический склад, резерв и свободный остаток'],
+      dried:['Сухоцветы','Отдельный склад долговечных материалов'],
+      purchases:['Закупки','Что, когда, сколько и по какой цене купили'],
+      writeoffs:['Списания','Контроль потерь и причин'],
+      orders:['Заказы','От создания до подтверждённой отгрузки'],
+      clients:['Клиенты','Статусы, форматы работы и экономика'],
+      subscriptions:['Подписки','Сроки, поставки и прогресс'],
+      expenses:['Расходы','Операционные расходы и привязка к заказам'],
+      reports:['Отчёты','Выручка, себестоимость и прибыль'],
+      history:['История','Полная история движения товара и денег']
+    };
+
+    function showPage(name){
+      document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+      document.getElementById('page-'+name).classList.add('active');
+      document.querySelectorAll('.nav-btn').forEach(x=>x.classList.toggle('active',x.dataset.page===name));
+      document.getElementById('pageTitle').textContent=pageMeta[name][0];
+      document.getElementById('pageSubtitle').textContent=pageMeta[name][1];
+    }
+
+    function badgeStatus(status){
+      const map={reserved:['В резерве','warn'],shipped:['Отгружен','ok'],draft:['Черновик',''],cancelled:['Отменён','danger']};
+      const a=map[status]||[status,''];
+      return '<span class="badge '+a[1]+'">'+a[0]+'</span>';
+    }
+
+    function renderInventory(type, target){
+      const rows=state.inventory.filter(i=>i.type===type).sort((a,b)=>a.name.localeCompare(b.name,'ru')).map(i=>{
+        const r=reservedQty(i.id), f=freeQty(i);
+        return '<tr><td><strong>'+i.name+'</strong></td><td>'+i.color+'</td><td>'+i.qty+' шт.</td><td>'+r+' шт.</td><td>'+f+' шт.</td><td>'+rub(i.cost)+'</td></tr>';
+      }).join('');
+      document.getElementById(target).innerHTML=rows||'<tr><td colspan="6" class="empty">Пока пусто</td></tr>';
+    }
+
+    function render(){
+      const shipped=state.orders.filter(o=>o.status==='shipped');
+      const writeoffSum=state.writeoffs.reduce((s,w)=>s+w.cost,0);
+      const ops=state.expenses.reduce((s,e)=>s+e.amount,0);
+      const kpis=[
+        ['Стоимость склада',rub(inventoryValue()),'Физический остаток'],
+        ['В резерве',reserveCount()+' шт.','Под конкретные заказы'],
+        ['Получено оплат',rub(totalPaid()),'Деньги уже поступили'],
+        ['Заработано',rub(earnedRevenue()),'Только подтверждённые отгрузки'],
+        ['Прибыль',rub(totalProfit()),'После себестоимости и расходов'],
+        ['Списания',rub(writeoffSum),'По себестоимости']
+      ];
+      document.getElementById('kpiGrid').innerHTML=kpis.map(k=>'<div class="kpi"><div class="kpi-label">'+k[0]+'</div><div class="kpi-value">'+k[1]+'</div><div class="kpi-note">'+k[2]+'</div></div>').join('');
+      document.getElementById('reportKpis').innerHTML=kpis.map(k=>'<div class="kpi"><div class="kpi-label">'+k[0]+'</div><div class="kpi-value">'+k[1]+'</div><div class="kpi-note">'+k[2]+'</div></div>').join('');
+
+      document.getElementById('moneySummary').innerHTML=[
+        ['Оплаты от клиентов',rub(totalPaid())],
+        ['Признанная выручка',rub(earnedRevenue())],
+        ['Себестоимость отгруженного',rub(shipped.reduce((s,o)=>s+orderCogs(o),0))],
+        ['Операционные расходы',rub(ops)],
+        ['Списания',rub(writeoffSum)],
+        ['Итоговая прибыль',rub(totalProfit())]
+      ].map(x=>'<div class="metric-line"><span>'+x[0]+'</span><strong>'+x[1]+'</strong></div>').join('');
+
+      const reserves=state.orders.filter(o=>o.status==='reserved');
+      document.getElementById('reserveTable').innerHTML=reserves.map(o=>{
+        const c=clientById(o.clientId);
+        const pills=o.reserve.map(r=>{const i=itemById(r.itemId);return '<span class="reserve-pill">'+i.name+' '+i.color+' × '+r.qty+'</span>';}).join('');
+        return '<tr><td>#'+o.id+'</td><td>'+c.company+'</td><td>'+dateRu(o.date)+'</td><td><div class="order-reserve">'+pills+'</div></td><td><div class="order-reserve"><button class="small-btn" onclick="releaseReserve('+o.id+')">Удалить резерв</button><button class="small-btn" onclick="shipOrder('+o.id+')">Подтвердить отгрузку</button></div></td></tr>';
+      }).join('')||'<tr><td colspan="5" class="empty">Активных резервов нет</td></tr>';
+
+      document.getElementById('upcomingTable').innerHTML=state.orders.filter(o=>o.status!=='shipped').sort((a,b)=>a.date.localeCompare(b.date)).map(o=>{
+        const c=clientById(o.clientId);
+        return '<tr><td>'+dateRu(o.date)+'</td><td>'+c.company+'</td><td>'+(o.model==='subscription'?'Подписка':'Разовый')+'</td><td>'+rub(o.price)+'</td><td>'+badgeStatus(o.status)+'</td></tr>';
+      }).join('');
+
+      renderInventory('fresh','freshTable');
+      renderInventory('dried','driedTable');
+
+      document.getElementById('purchaseTable').innerHTML=state.purchases.slice().reverse().map(p=>'<tr><td>'+dateRu(p.date)+'</td><td>'+(p.type==='fresh'?'Свежие':'Сухоцветы')+'</td><td>'+p.name+'</td><td>'+p.color+'</td><td>'+p.qty+' шт.</td><td>'+rub(p.unitCost)+'</td><td>'+rub(p.qty*p.unitCost)+'</td><td>'+p.target+'</td></tr>').join('');
+
+      document.getElementById('writeoffTable').innerHTML=state.writeoffs.slice().reverse().map(w=>{const i=itemById(w.itemId);return '<tr><td>'+dateRu(w.date)+'</td><td>'+(i?i.name+' · '+i.color:'Позиция удалена')+'</td><td>'+w.qty+' шт.</td><td>'+w.reason+'</td><td>'+rub(w.cost)+'</td></tr>';}).join('')||'<tr><td colspan="5" class="empty">Списаний нет</td></tr>';
+
+      document.getElementById('ordersTable').innerHTML=state.orders.slice().sort((a,b)=>b.id-a.id).map(o=>{
+        const c=clientById(o.clientId), cogs=orderCogs(o), profit=o.status==='shipped'?orderProfit(o):0;
+        return '<tr><td>#'+o.id+'</td><td>'+c.company+'</td><td>'+dateRu(o.date)+'</td><td>'+(o.model==='subscription'?'Подписка':'Разовый')+'</td><td>'+rub(o.price)+'</td><td>'+rub(cogs)+'</td><td>'+(o.status==='shipped'?rub(profit):'—')+'</td><td>'+badgeStatus(o.status)+'</td></tr>';
+      }).join('');
+
+      document.getElementById('clientsTable').innerHTML=state.clients.map(c=>{
+        const earned=state.orders.filter(o=>o.clientId===c.id&&o.status==='shipped').reduce((s,o)=>s+o.price,0);
+        return '<tr><td><strong>'+c.company+'</strong></td><td>'+(c.inn||'—')+'</td><td>'+c.contact+'</td><td><span class="badge">'+c.status+'</span></td><td>'+(c.model==='subscription'?'Подписка':'Разовые поставки')+'</td><td>'+rub(c.paid||0)+'</td><td>'+rub(earned)+'</td></tr>';
+      }).join('');
+
+      document.getElementById('subscriptionsTable').innerHTML=state.subscriptions.map(s=>{
+        const c=clientById(s.clientId), total=s.months*s.perMonth, pct=Math.min(100,Math.round((s.delivered/total)*100));
+        return '<tr><td><strong>'+c.company+'</strong></td><td>'+dateRu(s.start)+' · '+s.months+' мес.</td><td>'+s.delivered+' из '+total+'</td><td>'+rub(s.bouquetPrice)+'</td><td>'+rub(s.paid)+'</td><td><div class="progress-row"><div>'+pct+'%</div><div class="progress"><span style="width:'+pct+'%"></span></div></div></td><td><span class="badge '+(s.status==='Активна'?'ok':'warn')+'">'+s.status+'</span></td></tr>';
+      }).join('');
+
+      document.getElementById('expensesTable').innerHTML=state.expenses.slice().reverse().map(e=>{
+        const o=orderById(e.orderId), c=o?clientById(o.clientId):null;
+        return '<tr><td>'+dateRu(e.date)+'</td><td>'+e.category+'</td><td>'+e.description+'</td><td>'+(o?c.company+' · #'+o.id:'Общий расход')+'</td><td>'+rub(e.amount)+'</td></tr>';
+      }).join('')||'<tr><td colspan="5" class="empty">Расходов нет</td></tr>';
+
+      const historyRows=state.history.slice().sort((a,b)=>b.id-a.id);
+      const historyHtml=historyRows.map(h=>{
+        const c=h.clientId?clientById(h.clientId):null;
+        return '<tr><td>'+dateRu(h.date)+'</td><td>'+h.type+'</td><td>'+h.description+'</td><td>'+(c?c.company:'—')+'</td><td>'+(h.amount?rub(h.amount):'—')+'</td></tr>';
+      }).join('');
+      document.getElementById('historyTable').innerHTML=historyHtml||'<tr><td colspan="5" class="empty">История пуста</td></tr>';
+      document.getElementById('recentHistoryTable').innerHTML=historyRows.slice(0,6).map(h=>{
+        const c=h.clientId?clientById(h.clientId):null;
+        return '<tr><td>'+dateRu(h.date)+'</td><td>'+h.type+'</td><td>'+h.description+'</td><td>'+(c?c.company:'—')+'</td><td>'+(h.amount?rub(h.amount):'—')+'</td></tr>';
+      }).join('');
+
+      fillSelects();
+      save();
+    }
+
+    function fillSelects(){
+      const clientOpts=state.clients.map(c=>'<option value="'+c.id+'">'+c.company+'</option>').join('');
+      document.getElementById('orderClient').innerHTML=clientOpts;
+      const openOrders=state.orders.filter(o=>o.status==='reserved'||o.status==='draft');
+      document.getElementById('purchaseTarget').innerHTML='<option value="">Свободный склад</option>'+openOrders.map(o=>'<option value="'+o.id+'">Заказ #'+o.id+' · '+clientById(o.clientId).company+'</option>').join('');
+      document.getElementById('expenseOrder').innerHTML='<option value="">Общий расход</option>'+state.orders.map(o=>'<option value="'+o.id+'">#'+o.id+' · '+clientById(o.clientId).company+'</option>').join('');
+      document.getElementById('writeoffItem').innerHTML=state.inventory.map(i=>'<option value="'+i.id+'">'+i.name+' · '+i.color+' · свободно '+freeQty(i)+' шт.</option>').join('');
+    }
+
+    function openModal(id){
+      document.getElementById(id+'Modal').classList.add('open');
+      const dateEl=document.getElementById(id+'Date');
+      if(dateEl&&!dateEl.value) dateEl.value=today();
+      if(id==='order'&&document.getElementById('reserveRows').children.length===0) addReserveRow();
+    }
+    function closeAll(){document.querySelectorAll('.modal-backdrop').forEach(m=>m.classList.remove('open'));}
+
+    function addReserveRow(){
+      const wrap=document.getElementById('reserveRows');
+      const row=document.createElement('div');
+      row.className='reserve-row';
+      row.innerHTML='<div><label>Позиция</label><select class="field-select reserve-item">'+state.inventory.filter(i=>freeQty(i)>0).map(i=>'<option value="'+i.id+'">'+i.name+' · '+i.color+' · свободно '+freeQty(i)+'</option>').join('')+'</select></div><div><label>Кол-во</label><input class="field reserve-qty" type="number" min="1" value="1"></div><button class="danger-btn" type="button">×</button>';
+      row.querySelector('.danger-btn').onclick=()=>row.remove();
+      wrap.appendChild(row);
+    }
+
+    function releaseReserve(id){
+      const o=orderById(id);
+      if(!o||o.status!=='reserved') return;
+      if(!confirm('Удалить резерв по заказу #'+id+'? Цветы снова станут свободными на складе.')) return;
+      o.status='draft';
+      state.history.push({id:Date.now(),date:today(),type:'Снят резерв',description:'Заказ #'+id,clientId:o.clientId,amount:0});
+      render();
+    }
+
+    function shipOrder(id){
+      const o=orderById(id);
+      if(!o||o.status!=='reserved') return;
+      if(!confirm('Подтвердить отгрузку заказа #'+id+'? После подтверждения цветы физически спишутся со склада, а выручка и прибыль будут признаны.')) return;
+      for(const r of o.reserve){
+        const item=itemById(r.itemId);
+        if(!item||item.qty<r.qty){alert('Недостаточно товара на складе: '+(item?item.name:'позиция'));return;}
+      }
+      o.reserve.forEach(r=>{ itemById(r.itemId).qty-=r.qty; });
+      o.status='shipped';
+      const sub=state.subscriptions.find(s=>s.clientId===o.clientId&&o.model==='subscription'&&s.status==='Активна');
+      if(sub) sub.delivered+=1;
+      state.history.push({id:Date.now(),date:today(),type:'Отгрузка',description:'Заказ #'+id+' подтверждён',clientId:o.clientId,amount:o.price});
+      render();
+    }
+
+    document.querySelectorAll('.nav-btn').forEach(btn=>btn.addEventListener('click',()=>showPage(btn.dataset.page)));
+    document.querySelectorAll('[data-open]').forEach(btn=>btn.addEventListener('click',()=>openModal(btn.dataset.open)));
+    document.querySelectorAll('[data-close]').forEach(btn=>btn.addEventListener('click',closeAll));
+    document.querySelectorAll('.modal-backdrop').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeAll();}));
+
+    document.getElementById('loginBtn').onclick=login;
+    document.getElementById('passwordInput').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
+    function login(){
+      if(document.getElementById('passwordInput').value==='0302'){
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('app').classList.remove('hidden');
+        render();
+      }else document.getElementById('loginError').classList.remove('hidden');
+    }
+
+    document.getElementById('clientModel').addEventListener('change',e=>{
+      document.getElementById('subscriptionFields').classList.toggle('hidden',e.target.value!=='subscription');
+    });
+
+    document.getElementById('addReserveRow').onclick=addReserveRow;
+
+    document.getElementById('savePurchase').onclick=()=>{
+      const type=document.getElementById('purchaseType').value;
+      const name=document.getElementById('purchaseName').value.trim();
+      const color=document.getElementById('purchaseColor').value.trim()||'Без цвета';
+      const qty=Number(document.getElementById('purchaseQty').value);
+      const unitCost=Number(document.getElementById('purchaseUnitCost').value);
+      const date=document.getElementById('purchaseDate').value||today();
+      const supplier=document.getElementById('purchaseSupplier').value.trim();
+      const targetId=Number(document.getElementById('purchaseTarget').value)||null;
+      if(!name||qty<=0||unitCost<0){alert('Заполни цветок, количество и стоимость.');return;}
+      let item=state.inventory.find(i=>i.type===type&&i.name.toLowerCase()===name.toLowerCase()&&i.color.toLowerCase()===color.toLowerCase());
+      if(item){
+        const oldValue=item.qty*item.cost, addValue=qty*unitCost;
+        item.cost=(oldValue+addValue)/(item.qty+qty);
+        item.qty+=qty;
+      }else{
+        item={id:Date.now(),type,name,color,qty,cost:unitCost};
+        state.inventory.push(item);
+      }
+      let target='Свободный склад';
+      if(targetId){
+        const o=orderById(targetId);
+        if(o){
+          const existing=o.reserve.find(r=>r.itemId===item.id);
+          if(existing) existing.qty+=qty; else o.reserve.push({itemId:item.id,qty});
+          o.status='reserved';
+          target='Заказ #'+o.id+' · '+clientById(o.clientId).company;
+        }
+      }
+      state.purchases.push({id:Date.now(),date,type,name,color,qty,unitCost,supplier,target});
+      state.history.push({id:Date.now()+1,date,type:'Закупка',description:name+' '+color+', '+qty+' шт.',clientId:targetId?orderById(targetId).clientId:null,amount:qty*unitCost});
+      document.getElementById('purchaseName').value='';
+      document.getElementById('purchaseColor').value='';
+      closeAll();render();
+    };
+
+    document.getElementById('saveClient').onclick=()=>{
+      const company=document.getElementById('clientCompany').value.trim();
+      if(!company){alert('Укажи название компании.');return;}
+      const id=Date.now(), model=document.getElementById('clientModel').value;
+      const paid=model==='subscription'?Number(document.getElementById('subPaid').value)||0:0;
+      state.clients.push({id,company,inn:document.getElementById('clientInn').value.trim(),contact:document.getElementById('clientContact').value.trim()||'—',phone:document.getElementById('clientPhone').value.trim(),status:document.getElementById('clientStatus').value,model,paid});
+      if(model==='subscription'){
+        const start=document.getElementById('subStart').value||today();
+        const months=Number(document.getElementById('subMonths').value)||1;
+        const perMonth=Number(document.getElementById('subDeliveries').value)||3;
+        const bouquetPrice=Number(document.getElementById('subBouquetPrice').value)||0;
+        state.subscriptions.push({id:Date.now()+1,clientId:id,start,months,perMonth,bouquetPrice,discount:Number(document.getElementById('subDiscount').value)||0,paid,delivered:0,status:'Активна'});
+      }
+      state.history.push({id:Date.now()+2,date:today(),type:'Клиент',description:'Создан клиент '+company,clientId:id,amount:paid});
+      closeAll();render();
+    };
+
+    document.getElementById('saveOrder').onclick=()=>{
+      const clientId=Number(document.getElementById('orderClient').value);
+      const model=document.getElementById('orderModel').value;
+      const date=document.getElementById('orderDate').value||today();
+      const price=Number(document.getElementById('orderPrice').value)||0;
+      const rows=[...document.querySelectorAll('#reserveRows .reserve-row')];
+      const reserve=[];
+      for(const row of rows){
+        const itemId=Number(row.querySelector('.reserve-item').value);
+        const qty=Number(row.querySelector('.reserve-qty').value);
+        if(!itemId||qty<=0) continue;
+        const existing=reserve.find(r=>r.itemId===itemId);
+        if(existing) existing.qty+=qty; else reserve.push({itemId,qty});
+      }
+      for(const r of reserve){
+        const item=itemById(r.itemId);
+        if(r.qty>freeQty(item)){alert('Недостаточно свободного остатка: '+item.name+' '+item.color);return;}
+      }
+      const id=Math.max(100,...state.orders.map(o=>o.id))+1;
+      const status=reserve.length?'reserved':'draft';
+      state.orders.push({id,clientId,model,date,price,status,reserve,note:document.getElementById('orderNote').value.trim()});
+      state.history.push({id:Date.now(),date:today(),type:reserve.length?'Резерв':'Заказ',description:'Создан заказ #'+id+(reserve.length?' и резерв':'') ,clientId,amount:0});
+      document.getElementById('reserveRows').innerHTML='';
+      document.getElementById('orderPrice').value='';
+      document.getElementById('orderNote').value='';
+      closeAll();render();
+    };
+
+    document.getElementById('openExpense').onclick=()=>openModal('expense');
+    document.getElementById('saveExpense').onclick=()=>{
+      const amount=Number(document.getElementById('expenseAmount').value);
+      if(amount<=0){alert('Укажи сумму расхода.');return;}
+      const orderId=Number(document.getElementById('expenseOrder').value)||null;
+      const e={id:Date.now(),date:document.getElementById('expenseDate').value||today(),category:document.getElementById('expenseCategory').value,description:document.getElementById('expenseDescription').value.trim()||'Без описания',amount,orderId};
+      state.expenses.push(e);
+      state.history.push({id:Date.now()+1,date:e.date,type:'Расход',description:e.category+' · '+e.description,clientId:orderId?orderById(orderId).clientId:null,amount});
+      closeAll();render();
+    };
+
+    document.getElementById('openWriteoff').onclick=()=>openModal('writeoff');
+    document.getElementById('saveWriteoff').onclick=()=>{
+      const itemId=Number(document.getElementById('writeoffItem').value), qty=Number(document.getElementById('writeoffQty').value), item=itemById(itemId);
+      if(!item||qty<=0||qty>freeQty(item)){alert('Нельзя списать больше свободного остатка.');return;}
+      item.qty-=qty;
+      const cost=qty*item.cost, reason=document.getElementById('writeoffReason').value;
+      state.writeoffs.push({id:Date.now(),date:today(),itemId,qty,reason,cost});
+      state.history.push({id:Date.now()+1,date:today(),type:'Списание',description:item.name+' '+item.color+', '+qty+' шт. · '+reason,clientId:null,amount:cost});
+      closeAll();render();
+    };
+
+    window.releaseReserve=releaseReserve;
+    window.shipOrder=shipOrder;
+    fillSelects();
+  </script>
+</body>
+</html>
