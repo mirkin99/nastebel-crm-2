@@ -532,7 +532,7 @@
       <input type="hidden" id="orderEditId"><div class="modal-head"><h3 id="orderModalTitle">Новый заказ</h3><button class="x" data-close>×</button></div>
       <div class="form-grid">
         <div><label>Клиент</label><select class="field-select" id="orderClient"></select></div>
-        <div><label>Формат</label><select class="field-select" id="orderModel"><option value="subscription">По подписке</option><option value="one_off">Разовая поставка</option><option value="retail">Розница</option></select></div>
+        <div><label>Формат</label><select class="field-select" id="orderModel"><option value="subscription">По подписке</option><option value="one_off">Долговечные цветы / разовая поставка</option><option value="retail">Розница</option></select></div>
         <div><label>Дата отгрузки</label><input class="field" id="orderDate" type="date"></div>
         <div><label>Стоимость букета / поставки</label><input class="field" id="orderPrice" type="number" min="0" placeholder="5000"></div>
         <div class="full"><label>Комментарий</label><textarea class="field-area" id="orderNote" placeholder="Референс, пожелания, адрес и т.д."></textarea></div>
@@ -727,7 +727,7 @@ function editClient(id){
  $("clientModalTitle").textContent="Редактировать клиента";$("saveClient").textContent="Сохранить изменения";openModal("client")
 }
 async function deleteClient(id){askConfirm({title:"Удалить клиента?",text:"Удаление возможно только если у клиента нет заказов.",okText:"Удалить",danger:true,onConfirm:()=>mutate("deleteClient",{id},"Клиент удалён")})}
-function editOrder(id){const o=orderById(id);resetOrderModal();$("orderEditId").value=id;$("orderClient").value=o.client_id||"";$("orderModel").value=o.sales_channel|| (o.subscription_id?"subscription":"one_off");$("orderDate").value=String(o.delivery_date).slice(0,10);$("orderPrice").value=o.sale_price;$("orderNote").value=o.note||"";orderReservations(id).forEach(r=>addReserveRow(r.item_id,r.quantity));$("orderModalTitle").textContent="Редактировать заказ #"+o.order_no;$("saveOrder").textContent="Сохранить изменения";openModal("order")}
+function editOrder(id){const o=orderById(id);resetOrderModal();$("orderEditId").value=id;$("orderModel").value=o.sales_channel|| (o.subscription_id?"subscription":"one_off");fillOrderClients();$("orderClient").value=o.client_id||"";$("orderDate").value=String(o.delivery_date).slice(0,10);$("orderPrice").value=o.sale_price;$("orderNote").value=o.note||"";orderReservations(id).forEach(r=>addReserveRow(r.item_id,r.quantity));$("orderModalTitle").textContent="Редактировать заказ #"+o.order_no;$("saveOrder").textContent="Сохранить изменения";openModal("order")}
 async function deleteOrder(id){askConfirm({title:"Удалить заказ?",text:"Резерв этого заказа будет освобождён. Отгруженные заказы удалить нельзя.",okText:"Удалить",danger:true,onConfirm:()=>mutate("deleteOrder",{id},"Заказ удалён")})}
 function toggleClientFields(){
  const model=$("clientModel").value;
@@ -741,7 +741,7 @@ function openKpi(target){
  else showPage(target);
 }
 function resetPaymentModal(){$("paymentEditId").value="";$("paymentModalTitle").textContent="Новая оплата";$("paymentDate").value=today();$("paymentAmount").value="";$("paymentNote").value="";$("paymentClient").disabled=false}
-function editPayment(id){const p=state.payments.find(x=>x.id===id);resetPaymentModal();$("paymentEditId").value=id;$("paymentModalTitle").textContent="Редактировать оплату";$("paymentClient").value=p.client_id;$("paymentClient").disabled=true;$("paymentDate").value=String(p.payment_date).slice(0,10);$("paymentAmount").value=p.amount;$("paymentNote").value=p.note||"";openModal("payment")}
+function editPayment(id){const p=state.payments.find(x=>x.id===id);resetPaymentModal();$("paymentEditId").value=id;$("paymentModalTitle").textContent="Редактировать оплату";$("paymentClient").value=p.client_id;$("paymentClient").disabled=false;$("paymentDate").value=String(p.payment_date).slice(0,10);$("paymentAmount").value=p.amount;$("paymentNote").value=p.note||"";openModal("payment")}
 async function deletePayment(id){askConfirm({title:"Удалить оплату?",text:"Сумма исчезнет из полученных оплат и отчётов.",okText:"Удалить",danger:true,onConfirm:()=>mutate("deletePayment",{id},"Оплата удалена")})}
 function resetExpenseModal(){$("expenseEditId").value="";$("expenseModalTitle").textContent="Добавить расход";$("expenseDate").value=today();$("expenseDescription").value="";$("expenseAmount").value="";$("expenseOrder").value=""}
 function editExpense(id){const e=state.expenses.find(x=>x.id===id);resetExpenseModal();$("expenseEditId").value=id;$("expenseModalTitle").textContent="Редактировать расход";$("expenseDate").value=String(e.expense_date).slice(0,10);$("expenseCategory").value=e.category;$("expenseDescription").value=e.description||"";$("expenseAmount").value=e.amount;$("expenseOrder").value=e.order_id||"";openModal("expense")}
