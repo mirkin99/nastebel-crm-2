@@ -194,6 +194,8 @@
     .readonly{opacity:.75;cursor:not-allowed}
   
     .section-empty-hint{color:var(--muted);font-size:13px;padding:18px 2px}
+  
+    .check-row input{width:17px;height:17px;accent-color:#718d78}
   </style>
 </head>
 <body>
@@ -211,9 +213,7 @@
     <header class="appbar">
       <div class="brand">NASTEBEL</div>
       <nav class="menu-bar">
-        <div class="menu-dropdown"><button class="menu-trigger">Главное</button><div class="menu-popup">
-          <button data-page="dashboard">Главная</button>
-        </div></div>
+        <button class="settings-link" data-page="dashboard">Главная</button>
         <button class="settings-link" data-page="warehouse">Склад</button>
         <div class="menu-dropdown"><button class="menu-trigger">Продажи</button><div class="menu-popup">
           <button data-page="orders">Заказы</button>
@@ -222,7 +222,6 @@
         <div class="menu-dropdown"><button class="menu-trigger">Финансы</button><div class="menu-popup">
           <button data-page="payments">Оплаты</button>
           <button data-page="expenses">Расходы</button>
-          <button data-page="reports">Отчёты</button>
         </div></div>
         <div class="menu-dropdown"><button class="menu-trigger">Создать</button><div class="menu-popup">
           <button data-open="purchase">+ Закупка</button>
@@ -230,6 +229,7 @@
           <button data-open="order">+ Заказ</button>
         </div></div>
         <button class="settings-link" data-page="settings">Настройки</button>
+        <button class="settings-link" data-page="reports">Отчёты</button>
       </nav>
     </header>
 
@@ -509,7 +509,9 @@
         <div><label>Контактное лицо</label><input class="field" id="clientContact" placeholder="Имя"></div>
         <div><label>Телефон / Telegram</label><input class="field" id="clientPhone" placeholder="+7 ..."></div>
         <div><label>Статус клиента</label><select class="field-select" id="clientStatus"><option>Переговоры</option><option>В работе</option><option>Приостановлен</option><option>Завершён</option></select></div>
-        <div><label>Формат клиента</label><select class="field-select" id="clientModel"><option value="subscription">Подписка</option><option value="durable">Долговечные цветы</option><option value="retail">Розница</option></select></div><div id="clientDefaultPriceWrap" class="hidden"><label id="clientDefaultPriceLabel">Цена</label><input class="field" id="clientDefaultPrice" type="number" min="0" step="0.01" placeholder="7000"></div><div class="full"><label>Комментарий</label><textarea class="field-area" id="clientNotes" placeholder="Пожелания, условия, особенности клиента"></textarea></div>
+        <div><label>Формат клиента</label><select class="field-select" id="clientModel"><option value="subscription">Подписка</option><option value="durable">Долговечные цветы</option><option value="retail">Розница</option></select></div><div id="clientDefaultPriceWrap" class="hidden"><label id="clientDefaultPriceLabel">Цена</label><input class="field" id="clientDefaultPrice" type="number" min="0" step="0.01" placeholder="7000"></div>
+        <div id="clientPaidWrap" class="hidden"><label>Оплата</label><label class="check-row" style="display:flex;align-items:center;gap:9px;margin-top:9px"><input id="clientPaid" type="checkbox"> <span>Оплачено</span></label><div class="card-desc" id="clientPaidHint"></div></div>
+        <div class="full"><label>Комментарий</label><textarea class="field-area" id="clientNotes" placeholder="Пожелания, условия, особенности клиента"></textarea></div>
       </div>
       <div id="subscriptionFields" class="form-grid hidden" style="margin-top:13px">
         <div><label>Дата начала подписки</label><input class="field" id="subStart" type="date"></div>
@@ -548,8 +550,9 @@
       <div class="form-grid">
         <div><label>Склад</label><select class="field-select" id="inventoryCategory"><option value="fresh">Свежие цветы</option><option value="dried">Сухоцветы</option></select></div>
         <div><label>Название</label><input class="field" id="inventoryName" placeholder="Гвоздика"></div>
-        <div class="full"><label>Цвет</label><input class="field" id="inventoryColor" placeholder="Белый"></div>
-        <div class="full notice">Количество и себестоимость здесь не редактируются — они меняются только через закупку, списание, резерв и отгрузку.</div>
+        <div><label>Цвет</label><input class="field" id="inventoryColor" placeholder="Белый"></div>
+        <div><label>Текущая себестоимость за 1 шт.</label><input class="field" id="inventoryAvgCost" type="number" min="0" step="0.01" placeholder="65"></div>
+        <div class="full notice">Название, цвет и текущую себестоимость можно исправить здесь. Количество меняется только через закупку, списание, резерв и отгрузку.</div>
       </div>
       <div class="modal-footer"><button class="ghost" data-close>Отмена</button><button class="primary" id="saveInventoryItem">Сохранить</button></div>
     </div>
@@ -615,11 +618,11 @@ const CACHE_KEY="nastebel_crm_snapshot_v1";
 function saveCache(){try{localStorage.setItem(CACHE_KEY,JSON.stringify(state))}catch(e){}}
 function loadCache(){try{const c=JSON.parse(localStorage.getItem(CACHE_KEY)||"null");if(c&&c.clients&&c.inventory){state=c;return true}}catch(e){}return false}
 const $=id=>document.getElementById(id),rub=n=>new Intl.NumberFormat("ru-RU",{maximumFractionDigits:0}).format(Math.round(Number(n)||0))+" ₽",today=()=>new Date().toISOString().slice(0,10),dateRu=d=>d?new Date(String(d).slice(0,10)+"T12:00:00").toLocaleDateString("ru-RU"):"—";
-const clientById=id=>state.clients.find(x=>x.id===id),itemById=id=>state.inventory.find(x=>x.id===id),orderById=id=>state.orders.find(x=>x.id===id),orderReservations=id=>state.reservations.filter(r=>r.order_id===id);
+const clientById=id=>state.clients.find(x=>x.id===id),itemById=id=>state.inventory.find(x=>x.id===id),activeInventory=()=>state.inventory.filter(i=>!i.archived_at),orderById=id=>state.orders.find(x=>x.id===id),orderReservations=id=>state.reservations.filter(r=>r.order_id===id);
 const reservedQty=id=>state.reservations.filter(r=>r.item_id===id&&orderById(r.order_id)?.status==="reserved").reduce((s,r)=>s+Number(r.quantity),0),freeQty=i=>Math.max(0,Number(i.quantity)-reservedQty(i.id));
 const orderCogs=o=>orderReservations(o.id).reduce((s,r)=>s+Number(r.quantity)*Number(r.unit_cost),0),orderExpenses=id=>state.expenses.filter(e=>e.order_id===id).reduce((s,e)=>s+Number(e.amount),0);
 const paidByClient=id=>state.payments.filter(p=>p.client_id===id).reduce((s,p)=>s+Number(p.amount),0),earnedByClient=id=>state.orders.filter(o=>o.client_id===id&&o.status==="shipped").reduce((s,o)=>s+Number(o.sale_price),0);
-const totalPaid=()=>state.payments.reduce((s,p)=>s+Number(p.amount),0),earnedRevenue=()=>state.orders.filter(o=>o.status==="shipped").reduce((s,o)=>s+Number(o.sale_price),0),inventoryValue=()=>state.inventory.reduce((s,i)=>s+Number(i.quantity)*Number(i.avg_cost),0),writeoffValue=()=>state.writeoffs.reduce((s,w)=>s+Number(w.quantity)*Number(w.unit_cost),0);
+const totalPaid=()=>state.payments.reduce((s,p)=>s+Number(p.amount),0),earnedRevenue=()=>state.orders.filter(o=>o.status==="shipped").reduce((s,o)=>s+Number(o.sale_price),0),inventoryValue=()=>activeInventory().reduce((s,i)=>s+Number(i.quantity)*Number(i.avg_cost),0),writeoffValue=()=>state.writeoffs.reduce((s,w)=>s+Number(w.quantity)*Number(w.unit_cost),0);
 const totalProfit=()=>state.orders.filter(o=>o.status==="shipped").reduce((s,o)=>s+Number(o.sale_price)-orderCogs(o)-orderExpenses(o.id),0)-state.expenses.filter(e=>!e.order_id).reduce((s,e)=>s+Number(e.amount),0)-writeoffValue();
 const channelLabel=o=>o.sales_channel==="retail"?"Розница":o.sales_channel==="subscription"||o.subscription_id?"Подписка":"Долговечные цветы";
 let currentClientFilter=null,currentOrderFilter="all",currentWarehouseView=null;
@@ -641,14 +644,14 @@ function badgeStatus(s){const m={reserved:["В резерве","warn"],shipped:[
 function renderInventory(type,target){
  const show=!!state.settings?.show_markup,mult=Number(state.settings?.markup_multiplier||2.5);
  document.querySelectorAll(".markup-head").forEach(x=>x.classList.toggle("hidden",!show));
- const rows=state.inventory.filter(i=>i.category===type&&Number(i.quantity)>0).sort((a,b)=>a.name.localeCompare(b.name,"ru")).map(i=>'<tr><td><strong>'+i.name+'</strong></td><td>'+i.color+'</td><td>'+i.quantity+' шт.</td><td>'+reservedQty(i.id)+' шт.</td><td>'+freeQty(i)+' шт.</td><td>'+rub(i.avg_cost)+'</td>'+(show?'<td class="markup-cell"><strong>'+rub(Number(i.avg_cost)*mult)+'</strong> <span class="card-desc">×'+mult+'</span></td>':'')+'<td><div class="row-actions"><button class="small-btn" data-edit-inventory="'+i.id+'">Изменить</button><button class="small-btn" data-duplicate-inventory="'+i.id+'">Дублировать</button><button class="danger-btn" data-delete-inventory="'+i.id+'">Удалить</button></div></td></tr>').join("");
+ const rows=activeInventory().filter(i=>i.category===type&&Number(i.quantity)>0).sort((a,b)=>a.name.localeCompare(b.name,"ru")).map(i=>'<tr><td><strong>'+i.name+'</strong></td><td>'+i.color+'</td><td>'+i.quantity+' шт.</td><td>'+reservedQty(i.id)+' шт.</td><td>'+freeQty(i)+' шт.</td><td>'+rub(i.avg_cost)+'</td>'+(show?'<td class="markup-cell"><strong>'+rub(Number(i.avg_cost)*mult)+'</strong> <span class="card-desc">×'+mult+'</span></td>':'')+'<td><div class="row-actions"><button class="small-btn" data-edit-inventory="'+i.id+'">Изменить</button><button class="small-btn" data-duplicate-inventory="'+i.id+'">Дублировать</button><button class="danger-btn" data-delete-inventory="'+i.id+'">Удалить</button></div></td></tr>').join("");
  $(target).innerHTML=rows||'<tr><td colspan="'+(show?8:7)+'" class="empty">Пока пусто</td></tr>';
 }
 function renderWarehouseSummary(){
  const show=!!state.settings?.show_markup,mult=Number(state.settings?.markup_multiplier||2.5);
  document.querySelectorAll(".summary-markup-head,.summary-markup-foot").forEach(x=>x.classList.toggle("hidden",!show));
  for(const type of ["fresh","dried"]){
-  const items=state.inventory.filter(i=>i.category===type&&Number(i.quantity)>0).sort((a,b)=>a.name.localeCompare(b.name,"ru"));
+  const items=activeInventory().filter(i=>i.category===type&&Number(i.quantity)>0).sort((a,b)=>a.name.localeCompare(b.name,"ru"));
   const target=type==="fresh"?"freshValueTable":"driedValueTable",total=items.reduce((s,i)=>s+Number(i.quantity)*Number(i.avg_cost),0);
   $(target).innerHTML=items.map(i=>'<tr><td><strong>'+i.name+'</strong></td><td>'+i.color+'</td><td>'+i.quantity+' шт.</td><td>'+rub(i.avg_cost)+'</td><td>'+rub(Number(i.quantity)*Number(i.avg_cost))+'</td>'+(show?'<td><strong>'+rub(Number(i.avg_cost)*mult)+'</strong></td>':'')+'<td><div class="row-actions"><button class="small-btn" data-edit-inventory="'+i.id+'">Изменить</button><button class="small-btn" data-duplicate-inventory="'+i.id+'">Дублировать</button><button class="danger-btn" data-delete-inventory="'+i.id+'">Удалить</button></div></td></tr>').join("")||'<tr><td colspan="'+(show?7:6)+'" class="empty">Пусто</td></tr>';
   $(type+"ValueTotal").textContent=rub(total);
@@ -681,7 +684,7 @@ function renderClients(){
  }
 }
 function render(){
- const k=[["Стоимость склада",rub(inventoryValue()),"Физический остаток"],["В резерве",state.inventory.reduce((s,i)=>s+reservedQty(i.id),0)+" шт.","Под заказы"],["Получено оплат",rub(totalPaid()),"Поступившие деньги"],["Заработано",rub(earnedRevenue()),"Подтверждённые отгрузки"],["Прибыль",rub(totalProfit()),"После затрат"],["Списания",rub(writeoffValue()),"По себестоимости"]];
+ const k=[["Стоимость склада",rub(inventoryValue()),"Физический остаток"],["В резерве",activeInventory().reduce((s,i)=>s+reservedQty(i.id),0)+" шт.","Под заказы"],["Получено оплат",rub(totalPaid()),"Поступившие деньги"],["Заработано",rub(earnedRevenue()),"Подтверждённые отгрузки"],["Прибыль",rub(totalProfit()),"После затрат"],["Списания",rub(writeoffValue()),"По себестоимости"]];
  const targets=["warehouse","orders","payments","reports","reports","writeoffs"];
  const kh=k.map((x,i)=>'<button class="kpi kpi-link" data-kpi-target="'+targets[i]+'"><div class="kpi-label">'+x[0]+'</div><div class="kpi-value">'+x[1]+'</div><div class="kpi-note">'+x[2]+'</div></button>').join("");
  $("kpiGrid").innerHTML=kh;
@@ -703,7 +706,7 @@ function render(){
  const hist=state.history;$("historyTable").innerHTML=hist.map(h=>'<tr><td>'+new Date(h.event_date).toLocaleString("ru-RU")+'</td><td>'+h.event_type+'</td><td>'+h.description+'</td><td>'+(clientById(h.client_id)?.company_name||"—")+'</td><td>'+(h.amount?rub(h.amount):"—")+'</td></tr>').join("")||'<tr><td colspan="5" class="empty">История пуста</td></tr>';$("recentHistoryTable").innerHTML=hist.slice(0,6).map(h=>'<tr><td>'+new Date(h.event_date).toLocaleDateString("ru-RU")+'</td><td>'+h.event_type+'</td><td>'+h.description+'</td><td>'+(clientById(h.client_id)?.company_name||"—")+'</td><td>'+(h.amount?rub(h.amount):"—")+'</td></tr>').join("")||'<tr><td colspan="5" class="empty">Операций нет</td></tr>';
  fillSelects();bindDynamic();if($("page-settings")?.classList.contains("active"))syncSettingsForm();
 }
-function fillSelects(){fillOrderClients();$("orderClient").innerHTML=$("orderClient").innerHTML||'<option value="">— без клиента —</option>'+state.clients.map(c=>'<option value="'+c.id+'">'+c.company_name+'</option>').join("");$("purchaseTarget").innerHTML='<option value="">Свободный склад</option>'+state.orders.filter(o=>["draft","reserved"].includes(o.status)).map(o=>'<option value="'+o.id+'">#'+o.order_no+' · '+(clientById(o.client_id)?.company_name||"Розница")+'</option>').join("");$("expenseOrder").innerHTML='<option value="">Общий расход</option>'+state.orders.map(o=>'<option value="'+o.id+'">#'+o.order_no+'</option>').join("");$("paymentClient").innerHTML=state.clients.map(c=>'<option value="'+c.id+'">'+c.company_name+'</option>').join("");$("writeoffItem").innerHTML=state.inventory.map(i=>'<option value="'+i.id+'">'+i.name+' · '+i.color+' · свободно '+freeQty(i)+'</option>').join("")}
+function fillSelects(){fillOrderClients();$("orderClient").innerHTML=$("orderClient").innerHTML||'<option value="">— без клиента —</option>'+state.clients.map(c=>'<option value="'+c.id+'">'+c.company_name+'</option>').join("");$("purchaseTarget").innerHTML='<option value="">Свободный склад</option>'+state.orders.filter(o=>["draft","reserved"].includes(o.status)).map(o=>'<option value="'+o.id+'">#'+o.order_no+' · '+(clientById(o.client_id)?.company_name||"Розница")+'</option>').join("");$("expenseOrder").innerHTML='<option value="">Общий расход</option>'+state.orders.map(o=>'<option value="'+o.id+'">#'+o.order_no+'</option>').join("");$("paymentClient").innerHTML=state.clients.map(c=>'<option value="'+c.id+'">'+c.company_name+'</option>').join("");$("writeoffItem").innerHTML=activeInventory().filter(i=>Number(i.quantity)>0).map(i=>'<option value="'+i.id+'">'+i.name+' · '+i.color+' · свободно '+freeQty(i)+'</option>').join("")}
 function fillOrderClients(){
  const channel=$("orderModel")?.value||"subscription";
  const desired=channel==="subscription"?"subscription":channel==="retail"?"retail":"durable";
@@ -713,9 +716,9 @@ function fillOrderClients(){
 function bindDynamic(){document.querySelectorAll("[data-release]").forEach(b=>b.onclick=()=>releaseReserve(b.dataset.release));document.querySelectorAll("[data-ship]").forEach(b=>b.onclick=()=>shipOrder(b.dataset.ship));document.querySelectorAll("[data-edit-client]").forEach(b=>b.onclick=()=>editClient(b.dataset.editClient));document.querySelectorAll("[data-delete-client]").forEach(b=>b.onclick=()=>deleteClient(b.dataset.deleteClient));document.querySelectorAll("[data-edit-order]").forEach(b=>b.onclick=()=>editOrder(b.dataset.editOrder));document.querySelectorAll("[data-delete-order]").forEach(b=>b.onclick=()=>deleteOrder(b.dataset.deleteOrder));document.querySelectorAll("[data-edit-payment]").forEach(b=>b.onclick=()=>editPayment(b.dataset.editPayment));document.querySelectorAll("[data-delete-payment]").forEach(b=>b.onclick=()=>deletePayment(b.dataset.deletePayment));document.querySelectorAll("[data-edit-expense]").forEach(b=>b.onclick=()=>editExpense(b.dataset.editExpense));document.querySelectorAll("[data-delete-expense]").forEach(b=>b.onclick=()=>deleteExpense(b.dataset.deleteExpense));document.querySelectorAll("[data-edit-writeoff]").forEach(b=>b.onclick=()=>editWriteoff(b.dataset.editWriteoff));document.querySelectorAll("[data-delete-writeoff]").forEach(b=>b.onclick=()=>deleteWriteoff(b.dataset.deleteWriteoff));document.querySelectorAll("[data-kpi-target]").forEach(b=>b.onclick=()=>openKpi(b.dataset.kpiTarget));document.querySelectorAll("[data-edit-inventory]").forEach(b=>b.onclick=()=>editInventory(b.dataset.editInventory));document.querySelectorAll("[data-duplicate-inventory]").forEach(b=>b.onclick=()=>duplicateInventory(b.dataset.duplicateInventory));document.querySelectorAll("[data-delete-inventory]").forEach(b=>b.onclick=()=>deleteInventory(b.dataset.deleteInventory));document.querySelectorAll("[data-new-inventory]").forEach(b=>b.onclick=()=>{resetInventoryModal(b.dataset.newInventory);openModal("inventory")})}
 function openModal(id){$(id+"Modal").classList.add("open");const d=$(id+"Date");if(d&&!d.value)d.value=today();if(id==="client"&&!$("clientEditId").value){$("clientModalTitle").textContent="Новый клиент";$("saveClient").textContent="Создать клиента"}if(id==="order"&&!$("orderEditId").value){$("orderModalTitle").textContent="Новый заказ";$("saveOrder").textContent="Создать заказ";if(!$("reserveRows").children.length)addReserveRow()}}
 function closeAll(){document.querySelectorAll(".modal-backdrop").forEach(m=>m.classList.remove("open"))}
-function resetClientModal(){$("clientEditId").value="";["clientCompany","clientInn","clientContact","clientPhone","clientNotes","clientDefaultPrice"].forEach(x=>$(x).value="");$("clientStatus").value="Переговоры";$("clientModel").value="subscription";$("subscriptionFields").classList.remove("hidden");$("subStatus").value="active";$("subPaid").disabled=false;$("subPaid").classList.remove("readonly");toggleClientFields()}
+function resetClientModal(){$("clientEditId").value="";["clientCompany","clientInn","clientContact","clientPhone","clientNotes","clientDefaultPrice"].forEach(x=>$(x).value="");$("clientPaid").checked=false;$("clientPaid").disabled=false;$("clientPaidHint").textContent="";$("clientStatus").value="Переговоры";$("clientModel").value="subscription";$("subscriptionFields").classList.remove("hidden");$("subStatus").value="active";$("subPaid").disabled=false;$("subPaid").classList.remove("readonly");toggleClientFields()}
 function resetOrderModal(){$("orderEditId").value="";$("orderClient").value="";$("orderModel").value="subscription";$("orderDate").value=today();$("orderPrice").value="";$("orderNote").value="";$("reserveRows").innerHTML=""}
-function addReserveRow(itemId="",qty=1){const row=document.createElement("div");row.className="reserve-row";row.innerHTML='<div><label>Позиция</label><select class="field-select reserve-item">'+state.inventory.map(i=>'<option value="'+i.id+'" '+(i.id===itemId?"selected":"")+'>'+i.name+' · '+i.color+' · свободно '+freeQty(i)+'</option>').join("")+'</select></div><div><label>Кол-во</label><input class="field reserve-qty" type="number" min="1" value="'+qty+'"></div><button class="danger-btn" type="button">×</button>';row.querySelector(".danger-btn").onclick=()=>row.remove();$("reserveRows").appendChild(row)}
+function addReserveRow(itemId="",qty=1){const row=document.createElement("div");row.className="reserve-row";row.innerHTML='<div><label>Позиция</label><select class="field-select reserve-item">'+activeInventory().filter(i=>freeQty(i)>0||i.id===itemId).map(i=>'<option value="'+i.id+'" '+(i.id===itemId?"selected":"")+'>'+i.name+' · '+i.color+' · свободно '+freeQty(i)+'</option>').join("")+'</select></div><div><label>Кол-во</label><input class="field reserve-qty" type="number" min="1" value="'+qty+'"></div><button class="danger-btn" type="button">×</button>';row.querySelector(".danger-btn").onclick=()=>row.remove();$("reserveRows").appendChild(row)}
 function toast(message,type="ok"){const el=document.createElement("div");el.className="toast"+(type==="error"?" error":"");el.textContent=message;$("toastWrap").appendChild(el);setTimeout(()=>el.remove(),3500)}
 let confirmAction=null;
 function askConfirm({title="Подтверждение",text,okText="Подтвердить",danger=false,onConfirm}){
@@ -740,7 +743,7 @@ async function shipOrder(id){
 }
 function editClient(id){
  const c=clientById(id),s=state.subscriptions.filter(x=>x.client_id===id).sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)))[0];
- resetClientModal();$("clientEditId").value=id;$("clientCompany").value=c.company_name;$("clientInn").value=c.inn||"";$("clientContact").value=c.contact_name||"";$("clientPhone").value=c.contact_info||"";$("clientNotes").value=c.notes||"";$("clientStatus").value=c.status;$("clientModel").value=c.work_model;$("clientDefaultPrice").value=Number(c.default_price||0);
+ resetClientModal();$("clientEditId").value=id;$("clientCompany").value=c.company_name;$("clientInn").value=c.inn||"";$("clientContact").value=c.contact_name||"";$("clientPhone").value=c.contact_info||"";$("clientNotes").value=c.notes||"";$("clientStatus").value=c.status;$("clientModel").value=c.work_model;$("clientDefaultPrice").value=Number(c.default_price||0);const alreadyPaid=paidByClient(id)>0;$("clientPaid").checked=alreadyPaid;$("clientPaid").disabled=alreadyPaid;$("clientPaidHint").textContent=alreadyPaid?"Оплата уже записана. Изменить её можно в Финансы → Оплаты.":"";
  if(c.work_model==="subscription"){
   $("subscriptionFields").classList.remove("hidden");
   if(s){$("subStart").value=String(s.start_date).slice(0,10);$("subMonths").value=s.months;$("subDeliveries").value=s.deliveries_per_month;$("subBouquetPrice").value=s.bouquet_price;$("subDiscount").value=s.discount_percent;$("subStatus").value=s.status}
@@ -757,6 +760,7 @@ function toggleClientFields(){
  $("subscriptionFields").classList.toggle("hidden",model!=="subscription");
  $("clientInnWrap").classList.toggle("hidden",model==="retail");
  $("clientDefaultPriceWrap").classList.toggle("hidden",model==="subscription");
+ $("clientPaidWrap").classList.toggle("hidden",model==="subscription");
  $("clientDefaultPriceLabel").textContent=model==="retail"?"Обычная цена букета":"Ориентировочная цена композиции";
 }
 function openKpi(target){
@@ -774,10 +778,10 @@ async function deleteExpense(id){askConfirm({title:"Удалить расход?
 function resetWriteoffModal(){$("writeoffEditId").value="";$("writeoffModalTitle").textContent="Новое списание";$("writeoffQty").value=1}
 function editWriteoff(id){const w=state.writeoffs.find(x=>x.id===id);resetWriteoffModal();$("writeoffEditId").value=id;$("writeoffModalTitle").textContent="Редактировать списание";$("writeoffItem").value=w.item_id;$("writeoffQty").value=w.quantity;$("writeoffReason").value=w.reason;openModal("writeoff");$("writeoffDate")&&($("writeoffDate").value=String(w.writeoff_date).slice(0,10))}
 async function deleteWriteoff(id){askConfirm({title:"Отменить списание?",text:"Списанное количество будет возвращено обратно на физический склад.",okText:"Вернуть на склад",danger:true,onConfirm:()=>mutate("deleteWriteoff",{id},"Списание отменено")})}
-function resetInventoryModal(category="fresh"){$("inventoryEditId").value="";$("inventoryModalTitle").textContent="Новая позиция";$("inventoryCategory").value=category;$("inventoryName").value="";$("inventoryColor").value=""}
-function editInventory(id){const i=itemById(id);resetInventoryModal(i.category);$("inventoryEditId").value=id;$("inventoryModalTitle").textContent="Изменить позицию";$("inventoryName").value=i.name;$("inventoryColor").value=i.color;openModal("inventory")}
+function resetInventoryModal(category="fresh"){$("inventoryEditId").value="";$("inventoryModalTitle").textContent="Новая позиция";$("inventoryCategory").value=category;$("inventoryName").value="";$("inventoryColor").value="";$("inventoryAvgCost").value=0;$("inventoryAvgCost").disabled=true;$("inventoryAvgCost").classList.add("readonly")}
+function editInventory(id){const i=itemById(id);resetInventoryModal(i.category);$("inventoryEditId").value=id;$("inventoryModalTitle").textContent="Изменить позицию";$("inventoryName").value=i.name;$("inventoryColor").value=i.color;$("inventoryAvgCost").value=Number(i.avg_cost||0);$("inventoryAvgCost").disabled=false;$("inventoryAvgCost").classList.remove("readonly");openModal("inventory")}
 function duplicateInventory(id){const i=itemById(id);$("purchaseType").value=i.category;$("purchaseName").value=i.name;$("purchaseColor").value=i.color;$("purchaseQty").value=10;$("purchaseUnitCost").value=Number(i.avg_cost||0);$("purchaseSupplier").value="";$("purchaseTarget").value="";$("purchaseDate").value=today();openModal("purchase");toast("Копия подготовлена как новая закупка — измени цвет/название, количество или цену.")}
-async function deleteInventory(id){askConfirm({title:"Удалить позицию?",text:"Удаление возможно только для пустой позиции без истории операций. Если нужно исправить цвет или название — используй «Изменить».",okText:"Удалить",danger:true,onConfirm:()=>mutate("deleteInventoryItem",{id},"Позиция удалена")})}
+async function deleteInventory(id){const i=itemById(id);askConfirm({title:"Удалить позицию?",text:"«"+(i?.name||"Позиция")+" · "+(i?.color||"")+"» исчезнет из рабочего склада. История закупок и прошлых операций сохранится. Если позиция сейчас в активном резерве, CRM покажет конкретный заказ.",okText:"Удалить со склада",danger:true,onConfirm:()=>mutate("deleteInventoryItem",{id},"Позиция удалена со склада")})}
 function autofillOrderPrice(){
  const id=$("orderClient").value;if(!id)return;
  const c=clientById(id),channel=$("orderModel").value;
@@ -807,11 +811,11 @@ function setWarehouseView(v){
 document.querySelectorAll(".warehouse-tab").forEach(b=>b.onclick=()=>setWarehouseView(b.dataset.warehouseView));
 $("newRetailOrder").onclick=()=>{resetOrderModal();$("orderModel").value="retail";$("orderClient").value="";openModal("order")};
 function syncSettingsForm(){if(!$("showMarkup"))return;$("showMarkup").checked=!!state.settings?.show_markup;$("markupMultiplier").value=Number(state.settings?.markup_multiplier||2.5)}
-$("saveSettings").onclick=async()=>{const mult=Number($("markupMultiplier").value);if(!Number.isFinite(mult)||mult<=0)return alert("Укажи корректный коэффициент.");await mutate("updateSettings",{payload:{show_markup:$("showMarkup").checked,markup_multiplier:mult}});syncSettingsForm();alert("Настройки сохранены.")};
+$("saveSettings").onclick=async()=>{const mult=Number($("markupMultiplier").value);if(!Number.isFinite(mult)||mult<=0)return toast("Укажи корректный коэффициент.","error");await mutate("updateSettings",{payload:{show_markup:$("showMarkup").checked,markup_multiplier:mult}});syncSettingsForm();toast("Настройки сохранены.")};
 $("saveClient").onclick=async()=>{
  const company=$("clientCompany").value.trim();if(!company)return toast("Укажи имя или название клиента.","error");
  const edit=$("clientEditId").value,model=$("clientModel").value;
- const p={id:edit||undefined,company_name:company,inn:model==="retail"?"":$("clientInn").value.trim(),contact_name:$("clientContact").value.trim(),contact_info:$("clientPhone").value.trim(),status:$("clientStatus").value,work_model:model,notes:$("clientNotes").value.trim(),default_price:model==="subscription"?0:Number($("clientDefaultPrice").value||0),initial_payment:0,subscription:null};
+ const p={id:edit||undefined,company_name:company,inn:model==="retail"?"":$("clientInn").value.trim(),contact_name:$("clientContact").value.trim(),contact_info:$("clientPhone").value.trim(),status:$("clientStatus").value,work_model:model,notes:$("clientNotes").value.trim(),default_price:model==="subscription"?0:Number($("clientDefaultPrice").value||0),mark_paid:model!=="subscription"&&$("clientPaid").checked,initial_payment:0,subscription:null};
  if(model==="subscription"){
   p.subscription={start_date:$("subStart").value||today(),months:Number($("subMonths").value||1),deliveries_per_month:Number($("subDeliveries").value||3),bouquet_price:Number($("subBouquetPrice").value||0),discount_percent:Number($("subDiscount").value||0),status:$("subStatus").value};
   if(!edit)p.initial_payment=Number($("subPaid").value||0);
@@ -819,9 +823,9 @@ $("saveClient").onclick=async()=>{
  await mutate(edit?"updateClient":"createClient",{payload:p},edit?"Клиент обновлён":"Клиент создан");
  resetClientModal();
 };
-$("saveOrder").onclick=async()=>{const p=orderPayload();if(p.sales_channel!=="retail"&&!p.client_id)return alert("Выбери клиента.");await mutate(p.id?"updateOrder":"createOrder",{payload:p});resetOrderModal()};
-$("savePurchase").onclick=async()=>{const name=$("purchaseName").value.trim(),qty=Number($("purchaseQty").value),unit=Number($("purchaseUnitCost").value);if(!name||qty<=0||unit<0)return alert("Заполни позицию, количество и стоимость.");await mutate("createPurchase",{payload:{purchase_date:$("purchaseDate").value||today(),supplier:$("purchaseSupplier").value.trim(),target_order_id:$("purchaseTarget").value||null,items:[{category:$("purchaseType").value,name,color:$("purchaseColor").value.trim()||"Без цвета",quantity:qty,unit_cost:unit}]}})};
-$("saveInventoryItem").onclick=async()=>{const id=$("inventoryEditId").value,name=$("inventoryName").value.trim();if(!name)return toast("Укажи название позиции.","error");const p={id:id||undefined,category:$("inventoryCategory").value,name,color:$("inventoryColor").value.trim()};await mutate(id?"updateInventoryItem":"createInventoryItem",{payload:p},id?"Позиция обновлена":"Позиция создана");resetInventoryModal()};
+$("saveOrder").onclick=async()=>{const p=orderPayload();if(p.sales_channel!=="retail"&&!p.client_id)return toast("Выбери клиента.","error");await mutate(p.id?"updateOrder":"createOrder",{payload:p});resetOrderModal()};
+$("savePurchase").onclick=async()=>{const name=$("purchaseName").value.trim(),qty=Number($("purchaseQty").value),unit=Number($("purchaseUnitCost").value);if(!name||qty<=0||unit<0)return toast("Заполни позицию, количество и стоимость.","error");await mutate("createPurchase",{payload:{purchase_date:$("purchaseDate").value||today(),supplier:$("purchaseSupplier").value.trim(),target_order_id:$("purchaseTarget").value||null,items:[{category:$("purchaseType").value,name,color:$("purchaseColor").value.trim()||"Без цвета",quantity:qty,unit_cost:unit}]}})};
+$("saveInventoryItem").onclick=async()=>{const id=$("inventoryEditId").value,name=$("inventoryName").value.trim(),cost=Number($("inventoryAvgCost").value||0);if(!name)return toast("Укажи название позиции.","error");if(cost<0)return toast("Цена не может быть отрицательной.","error");const p={id:id||undefined,category:$("inventoryCategory").value,name,color:$("inventoryColor").value.trim(),avg_cost:cost};await mutate(id?"updateInventoryItem":"createInventoryItem",{payload:p},id?"Позиция обновлена":"Позиция создана");resetInventoryModal()};
 $("savePayment").onclick=async()=>{const edit=$("paymentEditId").value,amount=Number($("paymentAmount").value),client_id=$("paymentClient").value;if(!client_id||amount<=0)return toast("Укажи клиента и сумму.","error");const p={id:edit||undefined,client_id,amount,payment_date:$("paymentDate").value||today(),note:$("paymentNote").value.trim(),subscription_id:state.subscriptions.find(s=>s.client_id===client_id&&s.status==="active")?.id||null};await mutate(edit?"updatePayment":"createPayment",{payload:p},edit?"Оплата обновлена":"Оплата добавлена");resetPaymentModal()};
 $("saveExpense").onclick=async()=>{const edit=$("expenseEditId").value,amount=Number($("expenseAmount").value);if(amount<=0)return toast("Укажи сумму.","error");await mutate(edit?"updateExpense":"createExpense",{payload:{id:edit||undefined,expense_date:$("expenseDate").value||today(),category:$("expenseCategory").value,description:$("expenseDescription").value.trim(),amount,order_id:$("expenseOrder").value||null}},edit?"Расход обновлён":"Расход добавлен");resetExpenseModal()};
 $("saveWriteoff").onclick=async()=>{const edit=$("writeoffEditId").value,item=$("writeoffItem").value,quantity=Number($("writeoffQty").value);if(!item||quantity<=0)return toast("Выбери позицию и количество.","error");await mutate(edit?"updateWriteoff":"createWriteoff",{payload:{id:edit||undefined,item_id:item,quantity,reason:$("writeoffReason").value,writeoff_date:$("writeoffDate").value||today()}},edit?"Списание обновлено":"Списание создано");resetWriteoffModal()};
