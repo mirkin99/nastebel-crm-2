@@ -192,6 +192,8 @@
     .kpi-link:hover{transform:translateY(-2px);border-color:#4a5258}
     .inline-note{max-width:260px;white-space:normal;line-height:1.35}
     .readonly{opacity:.75;cursor:not-allowed}
+  
+    .section-empty-hint{color:var(--muted);font-size:13px;padding:18px 2px}
   </style>
 </head>
 <body>
@@ -212,13 +214,7 @@
         <div class="menu-dropdown"><button class="menu-trigger">Главное</button><div class="menu-popup">
           <button data-page="dashboard">Главная</button>
         </div></div>
-        <div class="menu-dropdown"><button class="menu-trigger">Склад</button><div class="menu-popup">
-          <button data-page="warehouse" data-warehouse-open="overview">Общий склад</button>
-          <button data-page="warehouse" data-warehouse-open="fresh">Свежие цветы</button>
-          <button data-page="warehouse" data-warehouse-open="dried">Сухоцветы</button>
-          <button data-page="warehouse" data-warehouse-open="purchases">Закупки</button>
-          <button data-page="warehouse" data-warehouse-open="writeoffs">Списания</button>
-        </div></div>
+        <button class="settings-link" data-page="warehouse">Склад</button>
         <div class="menu-dropdown"><button class="menu-trigger">Продажи</button><div class="menu-popup">
           <button data-page="orders">Заказы</button>
           <button data-page="clients">Клиенты</button>
@@ -302,19 +298,19 @@
 
       <section class="page" id="page-warehouse">
         <div class="warehouse-tabs">
-          <button class="secondary warehouse-tab active" data-warehouse-view="overview">Общий склад</button>
+          <button class="secondary warehouse-tab" data-warehouse-view="overview">Общий склад</button>
           <button class="secondary warehouse-tab" data-warehouse-view="fresh">Свежие цветы</button>
           <button class="secondary warehouse-tab" data-warehouse-view="dried">Сухоцветы</button>
           <button class="secondary warehouse-tab" data-warehouse-view="purchases">Закупки</button>
           <button class="secondary warehouse-tab" data-warehouse-view="writeoffs">Списания</button>
         </div>
-        <div id="warehouse-overview" class="warehouse-view">
+        <div id="warehouse-overview" class="warehouse-view hidden">
           <div class="warehouse-summary">
             <div class="card"><div class="card-head"><div><h2>Свежие цветы</h2><div class="card-desc">Суммарная стоимость по каждой позиции</div></div></div>
-              <div class="table-wrap"><table><thead><tr><th>Позиция</th><th>Цвет</th><th>Остаток</th><th>Ср. цена</th><th>Стоимость остатка</th></tr></thead><tbody id="freshValueTable"></tbody><tfoot><tr><td colspan="4"><strong>Итого</strong></td><td id="freshValueTotal"></td></tr></tfoot></table></div>
+              <div class="table-wrap"><table><thead><tr><th>Позиция</th><th>Цвет</th><th>Остаток</th><th>Ср. цена</th><th>Стоимость остатка</th><th class="summary-markup-head hidden">Рек. цена</th><th></th></tr></thead><tbody id="freshValueTable"></tbody><tfoot><tr><td colspan="4"><strong>Итого</strong></td><td id="freshValueTotal"></td><td class="summary-markup-foot hidden"></td><td></td></tr></tfoot></table></div>
             </div>
             <div class="card"><div class="card-head"><div><h2>Сухоцветы</h2><div class="card-desc">Суммарная стоимость по каждой позиции</div></div></div>
-              <div class="table-wrap"><table><thead><tr><th>Позиция</th><th>Цвет</th><th>Остаток</th><th>Ср. цена</th><th>Стоимость остатка</th></tr></thead><tbody id="driedValueTable"></tbody><tfoot><tr><td colspan="4"><strong>Итого</strong></td><td id="driedValueTotal"></td></tr></tfoot></table></div>
+              <div class="table-wrap"><table><thead><tr><th>Позиция</th><th>Цвет</th><th>Остаток</th><th>Ср. цена</th><th>Стоимость остатка</th><th class="summary-markup-head hidden">Рек. цена</th><th></th></tr></thead><tbody id="driedValueTable"></tbody><tfoot><tr><td colspan="4"><strong>Итого</strong></td><td id="driedValueTotal"></td><td class="summary-markup-foot hidden"></td><td></td></tr></tfoot></table></div>
             </div>
           </div>
         </div>
@@ -326,9 +322,9 @@
 
       <section class="page" id="page-fresh">
         <div class="card">
-          <div class="card-head"><div><h2>Склад свежих цветов</h2><div class="card-desc">Вид цветка + цвет. Без углубления в сорта.</div></div></div>
+          <div class="card-head"><div><h2>Склад свежих цветов</h2><div class="card-desc">Вид цветка + цвет. Без углубления в сорта.</div></div><button class="secondary" data-new-inventory="fresh">+ Позиция</button></div>
           <div class="table-wrap"><table>
-            <thead><tr><th>Цветок</th><th>Цвет</th><th>Всего</th><th>В резерве</th><th>Свободно</th><th>Ср. себестоимость</th><th class="markup-head hidden">Рек. цена</th></tr></thead>
+            <thead><tr><th>Цветок</th><th>Цвет</th><th>Всего</th><th>В резерве</th><th>Свободно</th><th>Ср. себестоимость</th><th class="markup-head hidden">Рек. цена</th><th></th></tr></thead>
             <tbody id="freshTable"></tbody>
           </table></div>
         </div>
@@ -336,9 +332,9 @@
 
       <section class="page" id="page-dried">
         <div class="card">
-          <div class="card-head"><div><h2>Склад сухоцветов</h2><div class="card-desc">Отдельный учёт от свежих цветов</div></div></div>
+          <div class="card-head"><div><h2>Склад сухоцветов</h2><div class="card-desc">Отдельный учёт от свежих цветов</div></div><button class="secondary" data-new-inventory="dried">+ Позиция</button></div>
           <div class="table-wrap"><table>
-            <thead><tr><th>Позиция</th><th>Цвет</th><th>Всего</th><th>В резерве</th><th>Свободно</th><th>Ср. себестоимость</th><th class="markup-head hidden">Рек. цена</th></tr></thead>
+            <thead><tr><th>Позиция</th><th>Цвет</th><th>Всего</th><th>В резерве</th><th>Свободно</th><th>Ср. себестоимость</th><th class="markup-head hidden">Рек. цена</th><th></th></tr></thead>
             <tbody id="driedTable"></tbody>
           </table></div>
         </div>
@@ -385,13 +381,13 @@
 
       <section class="page" id="page-clients">
         <div class="client-tabs">
-          <button class="secondary client-tab active" data-client-filter="all">Все клиенты</button>
+          <button class="secondary client-tab" data-client-filter="all">Все клиенты</button>
           <button class="secondary client-tab" data-client-filter="subscription">Подписка</button>
           <button class="secondary client-tab" data-client-filter="durable">Долговечные цветы</button>
           <button class="secondary client-tab" data-client-filter="retail">Розница</button>
         </div>
-        <div class="card">
-          <div class="card-head"><div><h2 id="clientsHeading">Все клиенты</h2><div class="card-desc">Единая база контрагентов и покупателей</div></div><button class="primary" data-open="client">+ Клиент</button></div>
+        <div class="card hidden" id="clientsListCard">
+          <div class="card-head"><div><h2 id="clientsHeading">Клиенты</h2><div class="card-desc">Единая база контрагентов и покупателей</div></div><button class="primary" data-open="client">+ Клиент</button></div>
           <div class="table-wrap"><table>
             <thead id="clientsHead"></thead>
             <tbody id="clientsTable"></tbody>
@@ -513,7 +509,7 @@
         <div><label>Контактное лицо</label><input class="field" id="clientContact" placeholder="Имя"></div>
         <div><label>Телефон / Telegram</label><input class="field" id="clientPhone" placeholder="+7 ..."></div>
         <div><label>Статус клиента</label><select class="field-select" id="clientStatus"><option>Переговоры</option><option>В работе</option><option>Приостановлен</option><option>Завершён</option></select></div>
-        <div><label>Формат клиента</label><select class="field-select" id="clientModel"><option value="subscription">Подписка</option><option value="durable">Долговечные цветы</option><option value="retail">Розница</option></select></div><div class="full"><label>Комментарий</label><textarea class="field-area" id="clientNotes" placeholder="Пожелания, условия, особенности клиента"></textarea></div>
+        <div><label>Формат клиента</label><select class="field-select" id="clientModel"><option value="subscription">Подписка</option><option value="durable">Долговечные цветы</option><option value="retail">Розница</option></select></div><div id="clientDefaultPriceWrap" class="hidden"><label id="clientDefaultPriceLabel">Цена</label><input class="field" id="clientDefaultPrice" type="number" min="0" step="0.01" placeholder="7000"></div><div class="full"><label>Комментарий</label><textarea class="field-area" id="clientNotes" placeholder="Пожелания, условия, особенности клиента"></textarea></div>
       </div>
       <div id="subscriptionFields" class="form-grid hidden" style="margin-top:13px">
         <div><label>Дата начала подписки</label><input class="field" id="subStart" type="date"></div>
@@ -542,6 +538,20 @@
         </div>
       </div>
       <div class="modal-footer"><button class="ghost" data-close>Отмена</button><button class="primary" id="saveOrder">Сохранить заказ</button></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="inventoryModal">
+    <div class="modal small">
+      <input type="hidden" id="inventoryEditId">
+      <div class="modal-head"><h3 id="inventoryModalTitle">Позиция склада</h3><button class="x" data-close>×</button></div>
+      <div class="form-grid">
+        <div><label>Склад</label><select class="field-select" id="inventoryCategory"><option value="fresh">Свежие цветы</option><option value="dried">Сухоцветы</option></select></div>
+        <div><label>Название</label><input class="field" id="inventoryName" placeholder="Гвоздика"></div>
+        <div class="full"><label>Цвет</label><input class="field" id="inventoryColor" placeholder="Белый"></div>
+        <div class="full notice">Количество и себестоимость здесь не редактируются — они меняются только через закупку, списание, резерв и отгрузку.</div>
+      </div>
+      <div class="modal-footer"><button class="ghost" data-close>Отмена</button><button class="primary" id="saveInventoryItem">Сохранить</button></div>
     </div>
   </div>
 
@@ -609,7 +619,7 @@ const paidByClient=id=>state.payments.filter(p=>p.client_id===id).reduce((s,p)=>
 const totalPaid=()=>state.payments.reduce((s,p)=>s+Number(p.amount),0),earnedRevenue=()=>state.orders.filter(o=>o.status==="shipped").reduce((s,o)=>s+Number(o.sale_price),0),inventoryValue=()=>state.inventory.reduce((s,i)=>s+Number(i.quantity)*Number(i.avg_cost),0),writeoffValue=()=>state.writeoffs.reduce((s,w)=>s+Number(w.quantity)*Number(w.unit_cost),0);
 const totalProfit=()=>state.orders.filter(o=>o.status==="shipped").reduce((s,o)=>s+Number(o.sale_price)-orderCogs(o)-orderExpenses(o.id),0)-state.expenses.filter(e=>!e.order_id).reduce((s,e)=>s+Number(e.amount),0)-writeoffValue();
 const channelLabel=o=>o.sales_channel==="retail"?"Розница":o.sales_channel==="subscription"||o.subscription_id?"Подписка":"Долговечные цветы";
-let currentClientFilter="all",currentOrderFilter="all";
+let currentClientFilter=null,currentOrderFilter="all",currentWarehouseView=null;
 async function api(action,payload={}){const headers={"Content-Type":"application/json"};if(sessionToken)headers.Authorization="Bearer "+sessionToken;const r=await fetch(API_URL,{method:"POST",headers,body:JSON.stringify({action,...payload})}),d=await r.json().catch(()=>({error:"Ошибка сервера"}));if(r.status===401&&action!=="login"){localStorage.removeItem("nastebel_crm_session");sessionToken="";showLogin()}if(!r.ok)throw new Error(d.error||"Ошибка сервера");return d}
 async function loadData(){state=(await api("load")).data||state;render()}
 function showApp(){$("loginScreen").classList.add("hidden");$("app").classList.remove("hidden")}function showLogin(){$("loginScreen").classList.remove("hidden");$("app").classList.add("hidden")}
@@ -621,40 +631,50 @@ function showPage(name){
  $("pageTitle").textContent=pageMeta[name][0];$("pageSubtitle").textContent=pageMeta[name][1];
  document.querySelectorAll(".menu-dropdown").forEach(x=>x.classList.remove("open"));
  if(name==="settings")syncSettingsForm();
+ if(name==="warehouse"){currentWarehouseView=null;setWarehouseView(null)}
+ if(name==="clients"){currentClientFilter=null;renderClients()}
 }
 function badgeStatus(s){const m={reserved:["В резерве","warn"],shipped:["Отгружен","ok"],draft:["Черновик",""],cancelled:["Отменён","danger"]},a=m[s]||[s,""];return '<span class="badge '+a[1]+'">'+a[0]+'</span>'}
 function renderInventory(type,target){
  const show=!!state.settings?.show_markup,mult=Number(state.settings?.markup_multiplier||2.5);
  document.querySelectorAll(".markup-head").forEach(x=>x.classList.toggle("hidden",!show));
- const rows=state.inventory.filter(i=>i.category===type&&Number(i.quantity)>0).sort((a,b)=>a.name.localeCompare(b.name,"ru")).map(i=>'<tr><td><strong>'+i.name+'</strong></td><td>'+i.color+'</td><td>'+i.quantity+' шт.</td><td>'+reservedQty(i.id)+' шт.</td><td>'+freeQty(i)+' шт.</td><td>'+rub(i.avg_cost)+'</td>'+(show?'<td class="markup-cell"><strong>'+rub(Number(i.avg_cost)*mult)+'</strong> <span class="card-desc">×'+mult+'</span></td>':'')+'</tr>').join("");
- $(target).innerHTML=rows||'<tr><td colspan="'+(show?7:6)+'" class="empty">Пока пусто</td></tr>';
+ const rows=state.inventory.filter(i=>i.category===type&&Number(i.quantity)>0).sort((a,b)=>a.name.localeCompare(b.name,"ru")).map(i=>'<tr><td><strong>'+i.name+'</strong></td><td>'+i.color+'</td><td>'+i.quantity+' шт.</td><td>'+reservedQty(i.id)+' шт.</td><td>'+freeQty(i)+' шт.</td><td>'+rub(i.avg_cost)+'</td>'+(show?'<td class="markup-cell"><strong>'+rub(Number(i.avg_cost)*mult)+'</strong> <span class="card-desc">×'+mult+'</span></td>':'')+'<td><div class="row-actions"><button class="small-btn" data-edit-inventory="'+i.id+'">Изменить</button><button class="small-btn" data-duplicate-inventory="'+i.id+'">Дублировать</button><button class="danger-btn" data-delete-inventory="'+i.id+'">Удалить</button></div></td></tr>').join("");
+ $(target).innerHTML=rows||'<tr><td colspan="'+(show?8:7)+'" class="empty">Пока пусто</td></tr>';
 }
 function renderWarehouseSummary(){
+ const show=!!state.settings?.show_markup,mult=Number(state.settings?.markup_multiplier||2.5);
+ document.querySelectorAll(".summary-markup-head,.summary-markup-foot").forEach(x=>x.classList.toggle("hidden",!show));
  for(const type of ["fresh","dried"]){
   const items=state.inventory.filter(i=>i.category===type&&Number(i.quantity)>0).sort((a,b)=>a.name.localeCompare(b.name,"ru"));
   const target=type==="fresh"?"freshValueTable":"driedValueTable",total=items.reduce((s,i)=>s+Number(i.quantity)*Number(i.avg_cost),0);
-  $(target).innerHTML=items.map(i=>'<tr><td><strong>'+i.name+'</strong></td><td>'+i.color+'</td><td>'+i.quantity+' шт.</td><td>'+rub(i.avg_cost)+'</td><td>'+rub(Number(i.quantity)*Number(i.avg_cost))+'</td></tr>').join("")||'<tr><td colspan="5" class="empty">Пусто</td></tr>';
+  $(target).innerHTML=items.map(i=>'<tr><td><strong>'+i.name+'</strong></td><td>'+i.color+'</td><td>'+i.quantity+' шт.</td><td>'+rub(i.avg_cost)+'</td><td>'+rub(Number(i.quantity)*Number(i.avg_cost))+'</td>'+(show?'<td><strong>'+rub(Number(i.avg_cost)*mult)+'</strong></td>':'')+'<td><div class="row-actions"><button class="small-btn" data-edit-inventory="'+i.id+'">Изменить</button><button class="small-btn" data-duplicate-inventory="'+i.id+'">Дублировать</button></div></td></tr>').join("")||'<tr><td colspan="'+(show?7:6)+'" class="empty">Пусто</td></tr>';
   $(type+"ValueTotal").textContent=rub(total);
  }
 }
 
 function renderClients(){
+ document.querySelectorAll(".client-tab").forEach(b=>b.classList.toggle("active",b.dataset.clientFilter===currentClientFilter));
+ if(!currentClientFilter){
+  $("clientsListCard").classList.add("hidden");
+  $("clientsHead").innerHTML="";$("clientsTable").innerHTML="";
+  return;
+ }
+ $("clientsListCard").classList.remove("hidden");
  const list=state.clients.filter(c=>currentClientFilter==="all"||c.work_model===currentClientFilter);
  const title={all:"Все клиенты",subscription:"Подписка",durable:"Долговечные цветы",retail:"Розница"}[currentClientFilter];
  $("clientsHeading").textContent=title;
- $("orderModel").onchange=fillOrderClients;document.querySelectorAll(".client-tab").forEach(b=>b.classList.toggle("active",b.dataset.clientFilter===currentClientFilter));
  if(currentClientFilter==="all"){
-  $("clientsHead").innerHTML='<tr><th>Клиент</th><th>ИНН</th><th>Контакт</th><th>Статус</th><th>Формат</th><th>Оплачено</th><th>Заработано</th><th>Комментарий</th><th></th></tr>';
-  $("clientsTable").innerHTML=list.map(c=>'<tr><td><strong>'+c.company_name+'</strong></td><td>'+(c.inn||"—")+'</td><td>'+(c.contact_name||"—")+'</td><td><span class="badge">'+c.status+'</span></td><td>'+({subscription:"Подписка",durable:"Долговечные цветы",retail:"Розница"}[c.work_model]||c.work_model)+'</td><td>'+rub(paidByClient(c.id))+'</td><td>'+rub(earnedByClient(c.id))+'</td><td class="inline-note">'+(c.notes||"—")+'</td><td><div class="row-actions"><button class="small-btn" data-edit-client="'+c.id+'">Изменить</button><button class="danger-btn" data-delete-client="'+c.id+'">Удалить</button></div></td></tr>').join("")||'<tr><td colspan="9" class="empty">Клиентов нет</td></tr>';
+  $("clientsHead").innerHTML='<tr><th>Клиент</th><th>ИНН</th><th>Контакт</th><th>Статус</th><th>Формат</th><th>Цена</th><th>Оплачено</th><th>Заработано</th><th>Комментарий</th><th></th></tr>';
+  $("clientsTable").innerHTML=list.map(c=>{const s=state.subscriptions.filter(x=>x.client_id===c.id).sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)))[0],price=c.work_model==="subscription"?(s?Number(s.bouquet_price):0):Number(c.default_price||0);return '<tr><td><strong>'+c.company_name+'</strong></td><td>'+(c.work_model==="retail"?"—":(c.inn||"—"))+'</td><td>'+(c.contact_name||"—")+'</td><td><span class="badge">'+c.status+'</span></td><td>'+({subscription:"Подписка",durable:"Долговечные цветы",retail:"Розница"}[c.work_model]||c.work_model)+'</td><td>'+rub(price)+'</td><td>'+rub(paidByClient(c.id))+'</td><td>'+rub(earnedByClient(c.id))+'</td><td class="inline-note">'+(c.notes||"—")+'</td><td><div class="row-actions"><button class="small-btn" data-edit-client="'+c.id+'">Изменить</button><button class="danger-btn" data-delete-client="'+c.id+'">Удалить</button></div></td></tr>'}).join("")||'<tr><td colspan="10" class="empty">Клиентов нет</td></tr>';
  } else if(currentClientFilter==="subscription"){
   $("clientsHead").innerHTML='<tr><th>Клиент</th><th>Контакт</th><th>Статус</th><th>Подписка</th><th>Цена букета</th><th>Оплачено</th><th>Заработано</th><th>Комментарий</th><th></th></tr>';
   $("clientsTable").innerHTML=list.map(c=>{const s=state.subscriptions.filter(x=>x.client_id===c.id).sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)))[0];return '<tr><td><strong>'+c.company_name+'</strong></td><td>'+(c.contact_name||"—")+'</td><td><span class="badge">'+c.status+'</span></td><td>'+(s?dateRu(s.start_date)+' · '+s.months+' мес.':'—')+'</td><td>'+(s?rub(s.bouquet_price):"—")+'</td><td>'+rub(paidByClient(c.id))+'</td><td>'+rub(earnedByClient(c.id))+'</td><td class="inline-note">'+(c.notes||"—")+'</td><td><div class="row-actions"><button class="small-btn" data-edit-client="'+c.id+'">Изменить</button><button class="danger-btn" data-delete-client="'+c.id+'">Удалить</button></div></td></tr>'}).join("")||'<tr><td colspan="9" class="empty">Клиентов по подписке нет</td></tr>';
  } else if(currentClientFilter==="retail"){
-  $("clientsHead").innerHTML='<tr><th>Клиент</th><th>Контакт</th><th>Статус</th><th>Заказов</th><th>Сумма заказов</th><th>Оплачено</th><th>Комментарий</th><th></th></tr>';
-  $("clientsTable").innerHTML=list.map(c=>{const os=state.orders.filter(o=>o.client_id===c.id&&o.sales_channel==="retail"),sum=os.reduce((a,o)=>a+Number(o.sale_price||0),0);return '<tr><td><strong>'+c.company_name+'</strong></td><td>'+(c.contact_name||c.contact_info||"—")+'</td><td><span class="badge">'+c.status+'</span></td><td>'+os.length+'</td><td>'+rub(sum)+'</td><td>'+rub(paidByClient(c.id))+'</td><td class="inline-note">'+(c.notes||os.map(o=>o.note).filter(Boolean).slice(-1)[0]||"—")+'</td><td><div class="row-actions"><button class="small-btn" data-edit-client="'+c.id+'">Изменить</button><button class="danger-btn" data-delete-client="'+c.id+'">Удалить</button></div></td></tr>'}).join("")||'<tr><td colspan="8" class="empty">Розничных клиентов нет</td></tr>';
+  $("clientsHead").innerHTML='<tr><th>Клиент</th><th>Контакт</th><th>Статус</th><th>Цена</th><th>Заказов</th><th>Сумма заказов</th><th>Оплачено</th><th>Комментарий</th><th></th></tr>';
+  $("clientsTable").innerHTML=list.map(c=>{const os=state.orders.filter(o=>o.client_id===c.id&&o.sales_channel==="retail"),sum=os.reduce((a,o)=>a+Number(o.sale_price||0),0);return '<tr><td><strong>'+c.company_name+'</strong></td><td>'+(c.contact_name||c.contact_info||"—")+'</td><td><span class="badge">'+c.status+'</span></td><td>'+rub(c.default_price||0)+'</td><td>'+os.length+'</td><td>'+rub(sum)+'</td><td>'+rub(paidByClient(c.id))+'</td><td class="inline-note">'+(c.notes||os.map(o=>o.note).filter(Boolean).slice(-1)[0]||"—")+'</td><td><div class="row-actions"><button class="small-btn" data-edit-client="'+c.id+'">Изменить</button><button class="danger-btn" data-delete-client="'+c.id+'">Удалить</button></div></td></tr>'}).join("")||'<tr><td colspan="9" class="empty">Розничных клиентов нет</td></tr>';
  } else {
-  $("clientsHead").innerHTML='<tr><th>Клиент</th><th>ИНН</th><th>Контакт</th><th>Статус</th><th>Оплачено</th><th>Заработано</th><th>Комментарий</th><th></th></tr>';
-  $("clientsTable").innerHTML=list.map(c=>'<tr><td><strong>'+c.company_name+'</strong></td><td>'+(c.inn||"—")+'</td><td>'+(c.contact_name||"—")+'</td><td><span class="badge">'+c.status+'</span></td><td>'+rub(paidByClient(c.id))+'</td><td>'+rub(earnedByClient(c.id))+'</td><td class="inline-note">'+(c.notes||"—")+'</td><td><div class="row-actions"><button class="small-btn" data-edit-client="'+c.id+'">Изменить</button><button class="danger-btn" data-delete-client="'+c.id+'">Удалить</button></div></td></tr>').join("")||'<tr><td colspan="8" class="empty">Клиентов нет</td></tr>';
+  $("clientsHead").innerHTML='<tr><th>Клиент</th><th>ИНН</th><th>Контакт</th><th>Статус</th><th>Цена</th><th>Оплачено</th><th>Заработано</th><th>Комментарий</th><th></th></tr>';
+  $("clientsTable").innerHTML=list.map(c=>'<tr><td><strong>'+c.company_name+'</strong></td><td>'+(c.inn||"—")+'</td><td>'+(c.contact_name||"—")+'</td><td><span class="badge">'+c.status+'</span></td><td>'+rub(c.default_price||0)+'</td><td>'+rub(paidByClient(c.id))+'</td><td>'+rub(earnedByClient(c.id))+'</td><td class="inline-note">'+(c.notes||"—")+'</td><td><div class="row-actions"><button class="small-btn" data-edit-client="'+c.id+'">Изменить</button><button class="danger-btn" data-delete-client="'+c.id+'">Удалить</button></div></td></tr>').join("")||'<tr><td colspan="9" class="empty">Клиентов нет</td></tr>';
  }
 }
 function render(){
@@ -687,10 +707,10 @@ function fillOrderClients(){
  const list=state.clients.filter(c=>c.work_model===desired);
  $("orderClient").innerHTML=(channel==="retail"?'<option value="">— без карточки клиента —</option>':'')+list.map(c=>'<option value="'+c.id+'">'+c.company_name+'</option>').join("");
 }
-function bindDynamic(){document.querySelectorAll("[data-release]").forEach(b=>b.onclick=()=>releaseReserve(b.dataset.release));document.querySelectorAll("[data-ship]").forEach(b=>b.onclick=()=>shipOrder(b.dataset.ship));document.querySelectorAll("[data-edit-client]").forEach(b=>b.onclick=()=>editClient(b.dataset.editClient));document.querySelectorAll("[data-delete-client]").forEach(b=>b.onclick=()=>deleteClient(b.dataset.deleteClient));document.querySelectorAll("[data-edit-order]").forEach(b=>b.onclick=()=>editOrder(b.dataset.editOrder));document.querySelectorAll("[data-delete-order]").forEach(b=>b.onclick=()=>deleteOrder(b.dataset.deleteOrder));document.querySelectorAll("[data-edit-payment]").forEach(b=>b.onclick=()=>editPayment(b.dataset.editPayment));document.querySelectorAll("[data-delete-payment]").forEach(b=>b.onclick=()=>deletePayment(b.dataset.deletePayment));document.querySelectorAll("[data-edit-expense]").forEach(b=>b.onclick=()=>editExpense(b.dataset.editExpense));document.querySelectorAll("[data-delete-expense]").forEach(b=>b.onclick=()=>deleteExpense(b.dataset.deleteExpense));document.querySelectorAll("[data-edit-writeoff]").forEach(b=>b.onclick=()=>editWriteoff(b.dataset.editWriteoff));document.querySelectorAll("[data-delete-writeoff]").forEach(b=>b.onclick=()=>deleteWriteoff(b.dataset.deleteWriteoff));document.querySelectorAll("[data-kpi-target]").forEach(b=>b.onclick=()=>openKpi(b.dataset.kpiTarget))}
+function bindDynamic(){document.querySelectorAll("[data-release]").forEach(b=>b.onclick=()=>releaseReserve(b.dataset.release));document.querySelectorAll("[data-ship]").forEach(b=>b.onclick=()=>shipOrder(b.dataset.ship));document.querySelectorAll("[data-edit-client]").forEach(b=>b.onclick=()=>editClient(b.dataset.editClient));document.querySelectorAll("[data-delete-client]").forEach(b=>b.onclick=()=>deleteClient(b.dataset.deleteClient));document.querySelectorAll("[data-edit-order]").forEach(b=>b.onclick=()=>editOrder(b.dataset.editOrder));document.querySelectorAll("[data-delete-order]").forEach(b=>b.onclick=()=>deleteOrder(b.dataset.deleteOrder));document.querySelectorAll("[data-edit-payment]").forEach(b=>b.onclick=()=>editPayment(b.dataset.editPayment));document.querySelectorAll("[data-delete-payment]").forEach(b=>b.onclick=()=>deletePayment(b.dataset.deletePayment));document.querySelectorAll("[data-edit-expense]").forEach(b=>b.onclick=()=>editExpense(b.dataset.editExpense));document.querySelectorAll("[data-delete-expense]").forEach(b=>b.onclick=()=>deleteExpense(b.dataset.deleteExpense));document.querySelectorAll("[data-edit-writeoff]").forEach(b=>b.onclick=()=>editWriteoff(b.dataset.editWriteoff));document.querySelectorAll("[data-delete-writeoff]").forEach(b=>b.onclick=()=>deleteWriteoff(b.dataset.deleteWriteoff));document.querySelectorAll("[data-kpi-target]").forEach(b=>b.onclick=()=>openKpi(b.dataset.kpiTarget));document.querySelectorAll("[data-edit-inventory]").forEach(b=>b.onclick=()=>editInventory(b.dataset.editInventory));document.querySelectorAll("[data-duplicate-inventory]").forEach(b=>b.onclick=()=>duplicateInventory(b.dataset.duplicateInventory));document.querySelectorAll("[data-delete-inventory]").forEach(b=>b.onclick=()=>deleteInventory(b.dataset.deleteInventory));document.querySelectorAll("[data-new-inventory]").forEach(b=>b.onclick=()=>{resetInventoryModal(b.dataset.newInventory);openModal("inventory")})}
 function openModal(id){$(id+"Modal").classList.add("open");const d=$(id+"Date");if(d&&!d.value)d.value=today();if(id==="client"&&!$("clientEditId").value){$("clientModalTitle").textContent="Новый клиент";$("saveClient").textContent="Создать клиента"}if(id==="order"&&!$("orderEditId").value){$("orderModalTitle").textContent="Новый заказ";$("saveOrder").textContent="Создать заказ";if(!$("reserveRows").children.length)addReserveRow()}}
 function closeAll(){document.querySelectorAll(".modal-backdrop").forEach(m=>m.classList.remove("open"))}
-function resetClientModal(){$("clientEditId").value="";["clientCompany","clientInn","clientContact","clientPhone","clientNotes"].forEach(x=>$(x).value="");$("clientStatus").value="Переговоры";$("clientModel").value="subscription";$("subscriptionFields").classList.remove("hidden");$("subStatus").value="active";$("subPaid").disabled=false;$("subPaid").classList.remove("readonly");toggleClientFields()}
+function resetClientModal(){$("clientEditId").value="";["clientCompany","clientInn","clientContact","clientPhone","clientNotes","clientDefaultPrice"].forEach(x=>$(x).value="");$("clientStatus").value="Переговоры";$("clientModel").value="subscription";$("subscriptionFields").classList.remove("hidden");$("subStatus").value="active";$("subPaid").disabled=false;$("subPaid").classList.remove("readonly");toggleClientFields()}
 function resetOrderModal(){$("orderEditId").value="";$("orderClient").value="";$("orderModel").value="subscription";$("orderDate").value=today();$("orderPrice").value="";$("orderNote").value="";$("reserveRows").innerHTML=""}
 function addReserveRow(itemId="",qty=1){const row=document.createElement("div");row.className="reserve-row";row.innerHTML='<div><label>Позиция</label><select class="field-select reserve-item">'+state.inventory.map(i=>'<option value="'+i.id+'" '+(i.id===itemId?"selected":"")+'>'+i.name+' · '+i.color+' · свободно '+freeQty(i)+'</option>').join("")+'</select></div><div><label>Кол-во</label><input class="field reserve-qty" type="number" min="1" value="'+qty+'"></div><button class="danger-btn" type="button">×</button>';row.querySelector(".danger-btn").onclick=()=>row.remove();$("reserveRows").appendChild(row)}
 function toast(message,type="ok"){const el=document.createElement("div");el.className="toast"+(type==="error"?" error":"");el.textContent=message;$("toastWrap").appendChild(el);setTimeout(()=>el.remove(),3500)}
@@ -717,7 +737,7 @@ async function shipOrder(id){
 }
 function editClient(id){
  const c=clientById(id),s=state.subscriptions.filter(x=>x.client_id===id).sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)))[0];
- resetClientModal();$("clientEditId").value=id;$("clientCompany").value=c.company_name;$("clientInn").value=c.inn||"";$("clientContact").value=c.contact_name||"";$("clientPhone").value=c.contact_info||"";$("clientNotes").value=c.notes||"";$("clientStatus").value=c.status;$("clientModel").value=c.work_model;
+ resetClientModal();$("clientEditId").value=id;$("clientCompany").value=c.company_name;$("clientInn").value=c.inn||"";$("clientContact").value=c.contact_name||"";$("clientPhone").value=c.contact_info||"";$("clientNotes").value=c.notes||"";$("clientStatus").value=c.status;$("clientModel").value=c.work_model;$("clientDefaultPrice").value=Number(c.default_price||0);
  if(c.work_model==="subscription"){
   $("subscriptionFields").classList.remove("hidden");
   if(s){$("subStart").value=String(s.start_date).slice(0,10);$("subMonths").value=s.months;$("subDeliveries").value=s.deliveries_per_month;$("subBouquetPrice").value=s.bouquet_price;$("subDiscount").value=s.discount_percent;$("subStatus").value=s.status}
@@ -733,6 +753,8 @@ function toggleClientFields(){
  const model=$("clientModel").value;
  $("subscriptionFields").classList.toggle("hidden",model!=="subscription");
  $("clientInnWrap").classList.toggle("hidden",model==="retail");
+ $("clientDefaultPriceWrap").classList.toggle("hidden",model==="subscription");
+ $("clientDefaultPriceLabel").textContent=model==="retail"?"Обычная цена букета":"Ориентировочная цена композиции";
 }
 function openKpi(target){
  if(target==="warehouse"){showPage("warehouse");setWarehouseView("overview")}
@@ -749,6 +771,16 @@ async function deleteExpense(id){askConfirm({title:"Удалить расход?
 function resetWriteoffModal(){$("writeoffEditId").value="";$("writeoffModalTitle").textContent="Новое списание";$("writeoffQty").value=1}
 function editWriteoff(id){const w=state.writeoffs.find(x=>x.id===id);resetWriteoffModal();$("writeoffEditId").value=id;$("writeoffModalTitle").textContent="Редактировать списание";$("writeoffItem").value=w.item_id;$("writeoffQty").value=w.quantity;$("writeoffReason").value=w.reason;openModal("writeoff");$("writeoffDate")&&($("writeoffDate").value=String(w.writeoff_date).slice(0,10))}
 async function deleteWriteoff(id){askConfirm({title:"Отменить списание?",text:"Списанное количество будет возвращено обратно на физический склад.",okText:"Вернуть на склад",danger:true,onConfirm:()=>mutate("deleteWriteoff",{id},"Списание отменено")})}
+function resetInventoryModal(category="fresh"){$("inventoryEditId").value="";$("inventoryModalTitle").textContent="Новая позиция";$("inventoryCategory").value=category;$("inventoryName").value="";$("inventoryColor").value=""}
+function editInventory(id){const i=itemById(id);resetInventoryModal(i.category);$("inventoryEditId").value=id;$("inventoryModalTitle").textContent="Изменить позицию";$("inventoryName").value=i.name;$("inventoryColor").value=i.color;openModal("inventory")}
+function duplicateInventory(id){const i=itemById(id);resetInventoryModal(i.category);$("inventoryModalTitle").textContent="Дублировать позицию";$("inventoryName").value=i.name;$("inventoryColor").value=i.color;openModal("inventory");toast("Измени название или цвет и сохрани новую позицию.")}
+async function deleteInventory(id){askConfirm({title:"Удалить позицию?",text:"Удаление возможно только для пустой позиции без истории операций. Если нужно исправить цвет или название — используй «Изменить».",okText:"Удалить",danger:true,onConfirm:()=>mutate("deleteInventoryItem",{id},"Позиция удалена")})}
+function autofillOrderPrice(){
+ const id=$("orderClient").value;if(!id)return;
+ const c=clientById(id),channel=$("orderModel").value;
+ if(channel==="subscription"){const s=state.subscriptions.filter(x=>x.client_id===id&&x.status==="active").sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)))[0];if(s)$("orderPrice").value=Number(s.bouquet_price||0)}
+ else $("orderPrice").value=Number(c?.default_price||0);
+}
 function orderPayload(){const channel=$("orderModel").value,client_id=$("orderClient").value||null,res=[];document.querySelectorAll("#reserveRows .reserve-row").forEach(row=>{const item_id=row.querySelector(".reserve-item").value,quantity=Number(row.querySelector(".reserve-qty").value);if(item_id&&quantity>0){const x=res.find(r=>r.item_id===item_id);x?x.quantity+=quantity:res.push({item_id,quantity})}});const subscription_id=channel==="subscription"?state.subscriptions.find(s=>s.client_id===client_id&&s.status==="active")?.id||null:null;return{id:$("orderEditId").value||undefined,client_id,subscription_id,delivery_date:$("orderDate").value||today(),sale_price:Number($("orderPrice").value||0),note:$("orderNote").value.trim(),reservations:res,sales_channel:channel}}
 document.querySelectorAll("[data-page]").forEach(b=>b.onclick=()=>{showPage(b.dataset.page);if(b.dataset.warehouseOpen)setWarehouseView(b.dataset.warehouseOpen)});
 document.querySelectorAll(".menu-trigger").forEach(b=>b.onclick=e=>{e.stopPropagation();const p=b.parentElement;document.querySelectorAll(".menu-dropdown").forEach(x=>{if(x!==p)x.classList.remove("open")});p.classList.toggle("open")});
@@ -762,8 +794,10 @@ function applyTheme(){
 $("themeToggle").onclick=()=>{localStorage.setItem("nastebel_theme",document.body.classList.contains("light")?"dark":"light");applyTheme()};
 applyTheme()
 function setWarehouseView(v){
- document.querySelectorAll(".warehouse-tab").forEach(x=>x.classList.toggle("active",x.dataset.warehouseView===v));
+ currentWarehouseView=v||null;
+ document.querySelectorAll(".warehouse-tab").forEach(x=>x.classList.toggle("active",!!v&&x.dataset.warehouseView===v));
  document.querySelectorAll(".warehouse-view").forEach(x=>x.classList.add("hidden"));
+ if(!v)return;
  if(v==="overview")$("warehouse-overview").classList.remove("hidden");
  else{const source=$("page-"+v),target=$("warehouse-"+v);if(!target.children.length)target.append(...Array.from(source.children));target.classList.remove("hidden")}
 }
@@ -774,7 +808,7 @@ $("saveSettings").onclick=async()=>{const mult=Number($("markupMultiplier").valu
 $("saveClient").onclick=async()=>{
  const company=$("clientCompany").value.trim();if(!company)return toast("Укажи имя или название клиента.","error");
  const edit=$("clientEditId").value,model=$("clientModel").value;
- const p={id:edit||undefined,company_name:company,inn:model==="retail"?"":$("clientInn").value.trim(),contact_name:$("clientContact").value.trim(),contact_info:$("clientPhone").value.trim(),status:$("clientStatus").value,work_model:model,notes:$("clientNotes").value.trim(),initial_payment:0,subscription:null};
+ const p={id:edit||undefined,company_name:company,inn:model==="retail"?"":$("clientInn").value.trim(),contact_name:$("clientContact").value.trim(),contact_info:$("clientPhone").value.trim(),status:$("clientStatus").value,work_model:model,notes:$("clientNotes").value.trim(),default_price:model==="subscription"?0:Number($("clientDefaultPrice").value||0),initial_payment:0,subscription:null};
  if(model==="subscription"){
   p.subscription={start_date:$("subStart").value||today(),months:Number($("subMonths").value||1),deliveries_per_month:Number($("subDeliveries").value||3),bouquet_price:Number($("subBouquetPrice").value||0),discount_percent:Number($("subDiscount").value||0),status:$("subStatus").value};
   if(!edit)p.initial_payment=Number($("subPaid").value||0);
@@ -784,6 +818,7 @@ $("saveClient").onclick=async()=>{
 };
 $("saveOrder").onclick=async()=>{const p=orderPayload();if(p.sales_channel!=="retail"&&!p.client_id)return alert("Выбери клиента.");await mutate(p.id?"updateOrder":"createOrder",{payload:p});resetOrderModal()};
 $("savePurchase").onclick=async()=>{const name=$("purchaseName").value.trim(),qty=Number($("purchaseQty").value),unit=Number($("purchaseUnitCost").value);if(!name||qty<=0||unit<0)return alert("Заполни позицию, количество и стоимость.");await mutate("createPurchase",{payload:{purchase_date:$("purchaseDate").value||today(),supplier:$("purchaseSupplier").value.trim(),target_order_id:$("purchaseTarget").value||null,items:[{category:$("purchaseType").value,name,color:$("purchaseColor").value.trim()||"Без цвета",quantity:qty,unit_cost:unit}]}})};
+$("saveInventoryItem").onclick=async()=>{const id=$("inventoryEditId").value,name=$("inventoryName").value.trim();if(!name)return toast("Укажи название позиции.","error");const p={id:id||undefined,category:$("inventoryCategory").value,name,color:$("inventoryColor").value.trim()};await mutate(id?"updateInventoryItem":"createInventoryItem",{payload:p},id?"Позиция обновлена":"Позиция создана");resetInventoryModal()};
 $("savePayment").onclick=async()=>{const edit=$("paymentEditId").value,amount=Number($("paymentAmount").value),client_id=$("paymentClient").value;if(!client_id||amount<=0)return toast("Укажи клиента и сумму.","error");const p={id:edit||undefined,client_id,amount,payment_date:$("paymentDate").value||today(),note:$("paymentNote").value.trim(),subscription_id:state.subscriptions.find(s=>s.client_id===client_id&&s.status==="active")?.id||null};await mutate(edit?"updatePayment":"createPayment",{payload:p},edit?"Оплата обновлена":"Оплата добавлена");resetPaymentModal()};
 $("saveExpense").onclick=async()=>{const edit=$("expenseEditId").value,amount=Number($("expenseAmount").value);if(amount<=0)return toast("Укажи сумму.","error");await mutate(edit?"updateExpense":"createExpense",{payload:{id:edit||undefined,expense_date:$("expenseDate").value||today(),category:$("expenseCategory").value,description:$("expenseDescription").value.trim(),amount,order_id:$("expenseOrder").value||null}},edit?"Расход обновлён":"Расход добавлен");resetExpenseModal()};
 $("saveWriteoff").onclick=async()=>{const edit=$("writeoffEditId").value,item=$("writeoffItem").value,quantity=Number($("writeoffQty").value);if(!item||quantity<=0)return toast("Выбери позицию и количество.","error");await mutate(edit?"updateWriteoff":"createWriteoff",{payload:{id:edit||undefined,item_id:item,quantity,reason:$("writeoffReason").value,writeoff_date:$("writeoffDate").value||today()}},edit?"Списание обновлено":"Списание создано");resetWriteoffModal()};
