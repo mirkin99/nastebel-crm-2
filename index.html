@@ -179,6 +179,12 @@
       .menu-popup{top:38px}
       .main{padding:20px 14px 50px!important}
     }
+  
+    .crm-confirm{width:min(430px,100%)}
+    .confirm-text{color:var(--soft);font-size:14px;line-height:1.55;margin:4px 0 8px}
+    .toast-wrap{position:fixed;right:22px;bottom:22px;z-index:100;display:grid;gap:8px}
+    .toast{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:11px;padding:12px 14px;box-shadow:0 15px 45px rgba(0,0,0,.28);font-size:13px;max-width:360px}
+    .toast.error{border-color:#6b3d3d;color:#efcaca}
   </style>
 </head>
 <body>
@@ -540,6 +546,18 @@
     </div>
   </div>
 
+  <div class="modal-backdrop" id="confirmModal">
+    <div class="modal crm-confirm">
+      <div class="modal-head"><h3 id="confirmTitle">Подтверждение</h3><button class="x" id="confirmClose">×</button></div>
+      <div class="confirm-text" id="confirmText"></div>
+      <div class="modal-footer">
+        <button class="ghost" id="confirmCancel">Отмена</button>
+        <button class="primary" id="confirmOk">Подтвердить</button>
+      </div>
+    </div>
+  </div>
+  <div class="toast-wrap" id="toastWrap"></div>
+
   <script>
 const API_URL="https://xjvktqjlooquiewkvsmk.supabase.co/functions/v1/nastebel-crm-api";
 let sessionToken=localStorage.getItem("nastebel_crm_session")||"";
@@ -604,12 +622,32 @@ function closeAll(){document.querySelectorAll(".modal-backdrop").forEach(m=>m.cl
 function resetClientModal(){$("clientEditId").value="";["clientCompany","clientInn","clientContact","clientPhone"].forEach(x=>$(x).value="");$("clientStatus").value="Переговоры";$("clientModel").value="one";$("subscriptionFields").classList.add("hidden")}
 function resetOrderModal(){$("orderEditId").value="";$("orderClient").value="";$("orderModel").value="subscription";$("orderDate").value=today();$("orderPrice").value="";$("orderNote").value="";$("reserveRows").innerHTML=""}
 function addReserveRow(itemId="",qty=1){const row=document.createElement("div");row.className="reserve-row";row.innerHTML='<div><label>Позиция</label><select class="field-select reserve-item">'+state.inventory.map(i=>'<option value="'+i.id+'" '+(i.id===itemId?"selected":"")+'>'+i.name+' · '+i.color+' · свободно '+freeQty(i)+'</option>').join("")+'</select></div><div><label>Кол-во</label><input class="field reserve-qty" type="number" min="1" value="'+qty+'"></div><button class="danger-btn" type="button">×</button>';row.querySelector(".danger-btn").onclick=()=>row.remove();$("reserveRows").appendChild(row)}
-async function mutate(a,p){try{await api(a,p);closeAll();await loadData()}catch(e){alert(e.message)}}
-async function releaseReserve(id){if(confirm("Удалить резерв? Цветы снова станут свободными."))await mutate("releaseReserve",{order_id:id})}async function shipOrder(id){if(confirm("Подтвердить отгрузку? Остатки уменьшатся, выручка будет признана."))await mutate("shipOrder",{order_id:id})}
+function toast(message,type="ok"){const el=document.createElement("div");el.className="toast"+(type==="error"?" error":"");el.textContent=message;$("toastWrap").appendChild(el);setTimeout(()=>el.remove(),3500)}
+let confirmAction=null;
+function askConfirm({title="Подтверждение",text,okText="Подтвердить",danger=false,onConfirm}){
+ $("confirmTitle").textContent=title;$("confirmText").textContent=text;$("confirmOk").textContent=okText;
+ $("confirmOk").className=danger?"danger-btn":"primary";confirmAction=onConfirm;$("confirmModal").classList.add("open");
+}
+function closeConfirm(){$("confirmModal").classList.remove("open");confirmAction=null}
+$("confirmCancel").onclick=closeConfirm;$("confirmClose").onclick=closeConfirm;$("confirmModal").onclick=e=>{if(e.target===$("confirmModal"))closeConfirm()};
+$("confirmOk").onclick=async()=>{const fn=confirmAction;closeConfirm();if(fn)await fn()};
+async function mutate(a,p,successMessage=""){try{await api(a,p);closeAll();await loadData();if(successMessage)toast(successMessage)}catch(e){toast(e.message,"error")}}
+async function releaseReserve(id){
+ askConfirm({title:"Снять резерв?",text:"Зарезервированные цветы снова станут доступными на складе.",okText:"Снять резерв",danger:true,onConfirm:()=>mutate("releaseReserve",{order_id:id},"Резерв снят")});
+}
+async function shipOrder(id){
+ const o=orderById(id);
+ askConfirm({
+  title:"Подтвердить отгрузку?",
+  text:"Заказ #"+(o?.order_no||"")+" будет отмечен как отгруженный. Цветы спишутся с физического склада, а выручка и прибыль будут признаны.",
+  okText:"Подтвердить отгрузку",
+  onConfirm:()=>mutate("shipOrder",{order_id:id},"Отгрузка подтверждена")
+ });
+}
 function editClient(id){const c=clientById(id);resetClientModal();$("clientEditId").value=id;$("clientCompany").value=c.company_name;$("clientInn").value=c.inn||"";$("clientContact").value=c.contact_name||"";$("clientPhone").value=c.contact_info||"";$("clientStatus").value=c.status;$("clientModel").value=c.work_model;$("subscriptionFields").classList.add("hidden");$("clientModalTitle").textContent="Редактировать клиента";$("saveClient").textContent="Сохранить изменения";openModal("client")}
-async function deleteClient(id){if(confirm("Удалить клиента? Это возможно только если у него нет заказов."))await mutate("deleteClient",{id})}
+async function deleteClient(id){askConfirm({title:"Удалить клиента?",text:"Удаление возможно только если у клиента нет заказов.",okText:"Удалить",danger:true,onConfirm:()=>mutate("deleteClient",{id},"Клиент удалён")})}
 function editOrder(id){const o=orderById(id);resetOrderModal();$("orderEditId").value=id;$("orderClient").value=o.client_id||"";$("orderModel").value=o.sales_channel|| (o.subscription_id?"subscription":"one_off");$("orderDate").value=String(o.delivery_date).slice(0,10);$("orderPrice").value=o.sale_price;$("orderNote").value=o.note||"";orderReservations(id).forEach(r=>addReserveRow(r.item_id,r.quantity));$("orderModalTitle").textContent="Редактировать заказ #"+o.order_no;$("saveOrder").textContent="Сохранить изменения";openModal("order")}
-async function deleteOrder(id){if(confirm("Удалить заказ? Резерв этого заказа будет освобождён."))await mutate("deleteOrder",{id})}
+async function deleteOrder(id){askConfirm({title:"Удалить заказ?",text:"Резерв этого заказа будет освобождён. Отгруженные заказы удалить нельзя.",okText:"Удалить",danger:true,onConfirm:()=>mutate("deleteOrder",{id},"Заказ удалён")})}
 function orderPayload(){const channel=$("orderModel").value,client_id=$("orderClient").value||null,res=[];document.querySelectorAll("#reserveRows .reserve-row").forEach(row=>{const item_id=row.querySelector(".reserve-item").value,quantity=Number(row.querySelector(".reserve-qty").value);if(item_id&&quantity>0){const x=res.find(r=>r.item_id===item_id);x?x.quantity+=quantity:res.push({item_id,quantity})}});const subscription_id=channel==="subscription"?state.subscriptions.find(s=>s.client_id===client_id&&s.status==="active")?.id||null:null;return{id:$("orderEditId").value||undefined,client_id,subscription_id,delivery_date:$("orderDate").value||today(),sale_price:Number($("orderPrice").value||0),note:$("orderNote").value.trim(),reservations:res,sales_channel:channel}}
 document.querySelectorAll("[data-page]").forEach(b=>b.onclick=()=>{showPage(b.dataset.page);if(b.dataset.warehouseOpen)setWarehouseView(b.dataset.warehouseOpen)});
 document.querySelectorAll(".menu-trigger").forEach(b=>b.onclick=e=>{e.stopPropagation();const p=b.parentElement;document.querySelectorAll(".menu-dropdown").forEach(x=>{if(x!==p)x.classList.remove("open")});p.classList.toggle("open")});
