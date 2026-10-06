@@ -611,6 +611,9 @@
 const API_URL="https://xjvktqjlooquiewkvsmk.supabase.co/functions/v1/nastebel-crm-api";
 let sessionToken=localStorage.getItem("nastebel_crm_session")||"";
 let state={clients:[],subscriptions:[],inventory:[],orders:[],reservations:[],purchases:[],purchaseItems:[],payments:[],expenses:[],writeoffs:[],history:[],settings:{show_markup:false,markup_multiplier:2.5}};
+const CACHE_KEY="nastebel_crm_snapshot_v1";
+function saveCache(){try{localStorage.setItem(CACHE_KEY,JSON.stringify(state))}catch(e){}}
+function loadCache(){try{const c=JSON.parse(localStorage.getItem(CACHE_KEY)||"null");if(c&&c.clients&&c.inventory){state=c;return true}}catch(e){}return false}
 const $=id=>document.getElementById(id),rub=n=>new Intl.NumberFormat("ru-RU",{maximumFractionDigits:0}).format(Math.round(Number(n)||0))+" ₽",today=()=>new Date().toISOString().slice(0,10),dateRu=d=>d?new Date(String(d).slice(0,10)+"T12:00:00").toLocaleDateString("ru-RU"):"—";
 const clientById=id=>state.clients.find(x=>x.id===id),itemById=id=>state.inventory.find(x=>x.id===id),orderById=id=>state.orders.find(x=>x.id===id),orderReservations=id=>state.reservations.filter(r=>r.order_id===id);
 const reservedQty=id=>state.reservations.filter(r=>r.item_id===id&&orderById(r.order_id)?.status==="reserved").reduce((s,r)=>s+Number(r.quantity),0),freeQty=i=>Math.max(0,Number(i.quantity)-reservedQty(i.id));
@@ -621,7 +624,7 @@ const totalProfit=()=>state.orders.filter(o=>o.status==="shipped").reduce((s,o)=
 const channelLabel=o=>o.sales_channel==="retail"?"Розница":o.sales_channel==="subscription"||o.subscription_id?"Подписка":"Долговечные цветы";
 let currentClientFilter=null,currentOrderFilter="all",currentWarehouseView=null;
 async function api(action,payload={}){const headers={"Content-Type":"application/json"};if(sessionToken)headers.Authorization="Bearer "+sessionToken;const r=await fetch(API_URL,{method:"POST",headers,body:JSON.stringify({action,...payload})}),d=await r.json().catch(()=>({error:"Ошибка сервера"}));if(r.status===401&&action!=="login"){localStorage.removeItem("nastebel_crm_session");sessionToken="";showLogin()}if(!r.ok)throw new Error(d.error||"Ошибка сервера");return d}
-async function loadData(){state=(await api("load")).data||state;render()}
+async function loadData(){const d=(await api("load")).data;if(d){state=d;saveCache();render()}}
 function showApp(){$("loginScreen").classList.add("hidden");$("app").classList.remove("hidden")}function showLogin(){$("loginScreen").classList.remove("hidden");$("app").classList.add("hidden")}
 async function login(){try{const r=await api("login",{password:$("passwordInput").value});sessionToken=r.token;localStorage.setItem("nastebel_crm_session",sessionToken);showApp();await loadData()}catch(e){$("loginError").textContent=e.message;$("loginError").classList.remove("hidden")}}
 const pageMeta={dashboard:["Главная","Общая картина бизнеса на сегодня"],warehouse:["Склад","Общий склад и движения товара"],fresh:["Свежие цветы","Физический склад"],dried:["Сухоцветы","Отдельный склад"],purchases:["Закупки","История закупок"],writeoffs:["Списания","Потери и причины"],orders:["Заказы","Все продажи и поставки"],clients:["Клиенты","Карточки клиентов"],subscriptions:["Подписки","Сроки и поставки"],retail:["Розница","Розничные продажи"],payments:["Оплаты","Все поступления денег по клиентам"],expenses:["Расходы","Операционные расходы"],reports:["Отчёты","Выручка и прибыль"],history:["История","Движение товара и денег"],settings:["Настройки","Конфигурация интерфейса и расчётов"]};
@@ -722,7 +725,7 @@ function askConfirm({title="Подтверждение",text,okText="Подтв�
 function closeConfirm(){$("confirmModal").classList.remove("open");confirmAction=null}
 $("confirmCancel").onclick=closeConfirm;$("confirmClose").onclick=closeConfirm;$("confirmModal").onclick=e=>{if(e.target===$("confirmModal"))closeConfirm()};
 $("confirmOk").onclick=async()=>{const fn=confirmAction;closeConfirm();if(fn)await fn()};
-async function mutate(a,p,successMessage=""){try{await api(a,p);closeAll();await loadData();if(successMessage)toast(successMessage)}catch(e){toast(e.message,"error")}}
+async function mutate(a,p,successMessage=""){try{const r=await api(a,p);if(r.data){state=r.data;saveCache();render()}closeAll();if(successMessage)toast(successMessage)}catch(e){toast(e.message,"error")}}
 async function releaseReserve(id){
  askConfirm({title:"Снять резерв?",text:"Зарезервированные цветы снова станут доступными на складе.",okText:"Снять резерв",danger:true,onConfirm:()=>mutate("releaseReserve",{order_id:id},"Резерв снят")});
 }
@@ -822,7 +825,7 @@ $("saveInventoryItem").onclick=async()=>{const id=$("inventoryEditId").value,nam
 $("savePayment").onclick=async()=>{const edit=$("paymentEditId").value,amount=Number($("paymentAmount").value),client_id=$("paymentClient").value;if(!client_id||amount<=0)return toast("Укажи клиента и сумму.","error");const p={id:edit||undefined,client_id,amount,payment_date:$("paymentDate").value||today(),note:$("paymentNote").value.trim(),subscription_id:state.subscriptions.find(s=>s.client_id===client_id&&s.status==="active")?.id||null};await mutate(edit?"updatePayment":"createPayment",{payload:p},edit?"Оплата обновлена":"Оплата добавлена");resetPaymentModal()};
 $("saveExpense").onclick=async()=>{const edit=$("expenseEditId").value,amount=Number($("expenseAmount").value);if(amount<=0)return toast("Укажи сумму.","error");await mutate(edit?"updateExpense":"createExpense",{payload:{id:edit||undefined,expense_date:$("expenseDate").value||today(),category:$("expenseCategory").value,description:$("expenseDescription").value.trim(),amount,order_id:$("expenseOrder").value||null}},edit?"Расход обновлён":"Расход добавлен");resetExpenseModal()};
 $("saveWriteoff").onclick=async()=>{const edit=$("writeoffEditId").value,item=$("writeoffItem").value,quantity=Number($("writeoffQty").value);if(!item||quantity<=0)return toast("Выбери позицию и количество.","error");await mutate(edit?"updateWriteoff":"createWriteoff",{payload:{id:edit||undefined,item_id:item,quantity,reason:$("writeoffReason").value,writeoff_date:$("writeoffDate").value||today()}},edit?"Списание обновлено":"Списание создано");resetWriteoffModal()};
-(async()=>{if(sessionToken){try{showApp();await loadData()}catch(e){showLogin()}}else showLogin()})();
+(async()=>{if(sessionToken){try{showApp();if(loadCache())render();await loadData()}catch(e){showLogin()}}else showLogin()})();
 </script>
 <!-- pages-redeploy -->
 </body>
