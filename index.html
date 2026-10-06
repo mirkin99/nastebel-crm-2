@@ -196,6 +196,16 @@
     .section-empty-hint{color:var(--muted);font-size:13px;padding:18px 2px}
   
     .check-row input{width:17px;height:17px;accent-color:#718d78}
+  
+    .menu-trigger,.settings-link{font-size:13px}
+    .row-actions{flex-wrap:wrap;white-space:normal}
+    .period-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;color:var(--muted);font-size:12px}
+    .purchase-line{display:grid;grid-template-columns:130px 1.4fr 1fr 90px 120px auto;gap:8px;align-items:end;margin-bottom:9px}
+    .purchase-line label{margin-bottom:4px}
+    .purchase-total{font-size:14px;font-weight:700}
+    .detail-list{display:grid;gap:8px}
+    .detail-item{display:grid;grid-template-columns:1.4fr 1fr 90px 120px;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13px}
+    @media(max-width:900px){.purchase-line{grid-template-columns:1fr 1fr}.detail-item{grid-template-columns:1fr 1fr}}
   </style>
 </head>
 <body>
@@ -247,6 +257,7 @@
       </header>
 
       <section class="page active" id="page-dashboard">
+        <div class="period-bar"><span id="dashboardPeriod"></span><button class="small-btn" data-page="settings">Изменить период</button></div>
         <div class="kpis" id="kpiGrid"></div>
 
         <div class="grid-2">
@@ -258,7 +269,7 @@
               </div>
             </div>
             <div class="table-wrap"><table>
-              <thead><tr><th>Заказ</th><th>Клиент</th><th>Отгрузка</th><th>Резерв</th><th></th></tr></thead>
+              <thead><tr><th>Заказ</th><th>Клиент</th><th>Отгрузка</th><th>Действия</th></tr></thead>
               <tbody id="reserveTable"></tbody>
             </table></div>
           </div>
@@ -342,9 +353,9 @@
 
       <section class="page" id="page-purchases">
         <div class="card">
-          <div class="card-head"><div><h2>Закупки</h2><div class="card-desc">Каждая закупка сохраняет дату, цену и назначение</div></div></div>
+          <div class="card-head"><div><h2>Закупки</h2><div class="card-desc">Одна закупка = одна поездка или покупка, внутри может быть несколько позиций</div></div><button class="primary" id="openPurchase">+ Закупка</button></div>
           <div class="table-wrap"><table>
-            <thead><tr><th>Дата</th><th>Категория</th><th>Позиция</th><th>Цвет</th><th>Количество</th><th>Цена / шт.</th><th>Сумма</th><th>Назначение</th><th></th></tr></thead>
+            <thead><tr><th>Дата</th><th>Закупка</th><th>Поставщик</th><th>Позиций</th><th>Сумма</th><th>Назначение</th><th></th></tr></thead>
             <tbody id="purchaseTable"></tbody>
           </table></div>
         </div>
@@ -458,6 +469,10 @@
               <input class="field compact-input" id="markupMultiplier" type="number" min="0.1" step="0.1" value="2.5">
             </div>
             <div class="setting-row">
+              <div><strong>Период расчёта</strong><div class="card-desc">Главная и отчёты считают деньги только за выбранный период. По умолчанию — текущий месяц.</div></div>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input class="field" id="reportStart" type="date" style="width:145px"><span>—</span><input class="field" id="reportEnd" type="date" style="width:145px"><button class="small-btn" id="currentMonthBtn" type="button">Текущий месяц</button></div>
+            </div>
+            <div class="setting-row">
               <div><strong>Тема интерфейса</strong><div class="card-desc">Светлая или тёмная</div></div>
               <button class="secondary" id="themeToggle">☀ Светлая тема</button>
             </div>
@@ -482,17 +497,41 @@
     <div class="modal">
       <div class="modal-head"><h3>Новая закупка</h3><button class="x" data-close>×</button></div>
       <div class="form-grid">
-        <div><label>Склад</label><select class="field-select" id="purchaseType"><option value="fresh">Свежие цветы</option><option value="dried">Сухоцветы</option></select></div>
+        <div><label>Название закупки</label><input class="field" id="purchaseTitle" placeholder="Например, Рижский рынок"></div>
         <div><label>Дата закупки</label><input class="field" id="purchaseDate" type="date"></div>
-        <div><label>Цветок / позиция</label><input class="field" id="purchaseName" list="flowerList" placeholder="Например, лилия"></div>
-        <div><label>Цвет</label><input class="field" id="purchaseColor" placeholder="Белый"></div>
-        <div><label>Количество</label><input class="field" id="purchaseQty" type="number" min="1" value="10"></div>
-        <div><label>Стоимость за 1 шт.</label><input class="field" id="purchaseUnitCost" type="number" min="0" step="0.01" placeholder="180"></div>
         <div><label>Поставщик</label><input class="field" id="purchaseSupplier" placeholder="Опционально"></div>
         <div><label>Назначение закупки</label><select class="field-select" id="purchaseTarget"><option value="">Свободный склад</option></select></div>
-        <div class="full notice">Если выбран заказ, закупленные цветы сразу попадут на общий склад и одновременно будут <strong>зарезервированы именно под этот заказ</strong>.</div>
+        <div class="full"><label>Комментарий</label><input class="field" id="purchaseNote" placeholder="Опционально"></div>
+        <div class="full">
+          <div class="card-head" style="margin:6px 0 10px"><div><h2 style="font-size:14px">Позиции закупки</h2><div class="card-desc">Все цветы из одной покупки добавляются сюда</div></div><button class="small-btn" id="addPurchaseRow" type="button">+ Позиция</button></div>
+          <div id="purchaseRows"></div>
+          <div class="purchase-total" id="purchaseTotal">Итого: 0 ₽</div>
+        </div>
+        <div class="full notice">Если выбран заказ, все позиции этой закупки попадут на склад и сразу зарезервируются под этот заказ.</div>
       </div>
       <div class="modal-footer"><button class="ghost" data-close>Отмена</button><button class="primary" id="savePurchase">Сохранить закупку</button></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="purchaseDetailsModal">
+    <div class="modal">
+      <div class="modal-head"><h3 id="purchaseDetailsTitle">Закупка</h3><button class="x" data-close>×</button></div>
+      <div id="purchaseDetailsMeta" class="notice" style="margin-bottom:14px"></div>
+      <div class="detail-list" id="purchaseDetailsBody"></div>
+      <div class="modal-footer"><button class="ghost" data-close>Закрыть</button></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="transferModal">
+    <div class="modal small">
+      <div class="modal-head"><h3>Перенести цветы</h3><button class="x" data-close>×</button></div>
+      <div class="form-grid">
+        <input type="hidden" id="transferFromOrder">
+        <div class="full"><label>Что переносим</label><select class="field-select" id="transferItem"></select></div>
+        <div><label>Количество</label><input class="field" id="transferQty" type="number" min="1" value="1"></div>
+        <div><label>В заказ</label><select class="field-select" id="transferToOrder"></select></div>
+      </div>
+      <div class="modal-footer"><button class="ghost" data-close>Отмена</button><button class="primary" id="saveTransfer">Перенести</button></div>
     </div>
   </div>
 
@@ -622,8 +661,22 @@ const clientById=id=>state.clients.find(x=>x.id===id),activeClients=()=>state.cl
 const reservedQty=id=>state.reservations.filter(r=>r.item_id===id&&orderById(r.order_id)?.status==="reserved").reduce((s,r)=>s+Number(r.quantity),0),freeQty=i=>Math.max(0,Number(i.quantity)-reservedQty(i.id));
 const orderCogs=o=>orderReservations(o.id).reduce((s,r)=>s+Number(r.quantity)*Number(r.unit_cost),0),orderExpenses=id=>state.expenses.filter(e=>e.order_id===id).reduce((s,e)=>s+Number(e.amount),0);
 const paidByClient=id=>state.payments.filter(p=>p.client_id===id).reduce((s,p)=>s+Number(p.amount),0),earnedByClient=id=>state.orders.filter(o=>o.client_id===id&&o.status==="shipped").reduce((s,o)=>s+Number(o.sale_price),0);
-const totalPaid=()=>state.payments.reduce((s,p)=>s+Number(p.amount),0),earnedRevenue=()=>state.orders.filter(o=>o.status==="shipped").reduce((s,o)=>s+Number(o.sale_price),0),inventoryValue=()=>activeInventory().reduce((s,i)=>s+Number(i.quantity)*Number(i.avg_cost),0),writeoffValue=()=>state.writeoffs.reduce((s,w)=>s+Number(w.quantity)*Number(w.unit_cost),0);
-const totalProfit=()=>state.orders.filter(o=>o.status==="shipped").reduce((s,o)=>s+Number(o.sale_price)-orderCogs(o)-orderExpenses(o.id),0)-state.expenses.filter(e=>!e.order_id).reduce((s,e)=>s+Number(e.amount),0)-writeoffValue();
+function currentMonthBounds(){const d=new Date(),y=d.getFullYear(),m=d.getMonth();return[new Date(y,m,1).toISOString().slice(0,10),new Date(y,m+1,0).toISOString().slice(0,10)]}
+function periodBounds(){const def=currentMonthBounds();return[state.settings?.report_start||def[0],state.settings?.report_end||def[1]]}
+function inPeriod(d){if(!d)return false;const [a,b]=periodBounds(),x=String(d).slice(0,10);return x>=a&&x<=b}
+const periodPayments=()=>state.payments.filter(p=>inPeriod(p.payment_date));
+const periodExpenses=()=>state.expenses.filter(e=>inPeriod(e.expense_date));
+const periodPurchases=()=>state.purchases.filter(p=>inPeriod(p.purchase_date));
+const periodWriteoffs=()=>state.writeoffs.filter(w=>inPeriod(w.writeoff_date));
+const periodOrders=()=>state.orders.filter(o=>o.status==="shipped"&&inPeriod(o.shipped_at||o.delivery_date));
+const totalPaid=()=>periodPayments().reduce((s,p)=>s+Number(p.amount),0);
+const earnedRevenue=()=>periodOrders().reduce((s,o)=>s+Number(o.sale_price),0);
+const inventoryValue=()=>activeInventory().reduce((s,i)=>s+Number(i.quantity)*Number(i.avg_cost),0);
+const writeoffValue=()=>periodWriteoffs().reduce((s,w)=>s+Number(w.quantity)*Number(w.unit_cost),0);
+const purchaseSpend=()=>{const ids=new Set(periodPurchases().map(p=>p.id));return state.purchaseItems.filter(pi=>ids.has(pi.purchase_id)).reduce((s,pi)=>s+Number(pi.quantity)*Number(pi.unit_cost),0)};
+const operatingSpend=()=>periodExpenses().reduce((s,e)=>s+Number(e.amount),0);
+const cashCosts=()=>purchaseSpend()+operatingSpend();
+const totalProfit=()=>periodOrders().reduce((s,o)=>s+Number(o.sale_price)-orderCogs(o),0)-operatingSpend()-writeoffValue();
 const channelLabel=o=>o.sales_channel==="retail"?"Розница":o.sales_channel==="subscription"||o.subscription_id?"Подписка":"Долговечные цветы";
 let currentClientFilter=null,currentOrderFilter="all",currentWarehouseView=null;
 async function api(action,payload={}){const headers={"Content-Type":"application/json"};if(sessionToken)headers.Authorization="Bearer "+sessionToken;const r=await fetch(API_URL,{method:"POST",headers,body:JSON.stringify({action,...payload})}),d=await r.json().catch(()=>({error:"Ошибка сервера"}));if(r.status===401&&action!=="login"){localStorage.removeItem("nastebel_crm_session");sessionToken="";showLogin()}if(!r.ok)throw new Error(d.error||"Ошибка сервера");return d}
@@ -684,17 +737,18 @@ function renderClients(){
  }
 }
 function render(){
- const k=[["Стоимость склада",rub(inventoryValue()),"Физический остаток"],["В резерве",activeInventory().reduce((s,i)=>s+reservedQty(i.id),0)+" шт.","Под заказы"],["Получено оплат",rub(totalPaid()),"Поступившие деньги"],["Заработано",rub(earnedRevenue()),"Подтверждённые отгрузки"],["Прибыль",rub(totalProfit()),"После затрат"],["Списания",rub(writeoffValue()),"По себестоимости"]];
- const targets=["warehouse","orders","payments","reports","reports","writeoffs"];
+ const [periodStart,periodEnd]=periodBounds();$("dashboardPeriod").textContent="Период: "+dateRu(periodStart)+" — "+dateRu(periodEnd);
+ const k=[["Стоимость склада",rub(inventoryValue()),"Текущий физический остаток"],["В резерве",activeInventory().reduce((s,i)=>s+reservedQty(i.id),0)+" шт.","Под заказы"],["Получено оплат",rub(totalPaid()),"За выбранный период"],["Заработано",rub(earnedRevenue()),"Отгрузки за период"],["Затраты",rub(cashCosts()),"Закупки + расходы"],["Списания",rub(writeoffValue()),"За период"],["Прибыль",rub(totalProfit()),"За выбранный период"]];
+ const targets=["warehouse","orders","payments","reports","expenses","writeoffs","reports"];
  const kh=k.map((x,i)=>'<button class="kpi kpi-link" data-kpi-target="'+targets[i]+'"><div class="kpi-label">'+x[0]+'</div><div class="kpi-value">'+x[1]+'</div><div class="kpi-note">'+x[2]+'</div></button>').join("");
  $("kpiGrid").innerHTML=kh;
  $("reportKpis").innerHTML=k.map(x=>'<div class="kpi"><div class="kpi-label">'+x[0]+'</div><div class="kpi-value">'+x[1]+'</div><div class="kpi-note">'+x[2]+'</div></div>').join("");
- $("moneySummary").innerHTML=[["Оплаты",rub(totalPaid())],["Признанная выручка",rub(earnedRevenue())],["Операционные расходы",rub(state.expenses.reduce((s,e)=>s+Number(e.amount),0))],["Списания",rub(writeoffValue())],["Итоговая прибыль",rub(totalProfit())]].map(x=>'<div class="metric-line"><span>'+x[0]+'</span><strong>'+x[1]+'</strong></div>').join("");
- $("reserveTable").innerHTML=state.orders.filter(o=>o.status==="reserved").map(o=>'<tr><td>#'+o.order_no+'</td><td>'+(clientById(o.client_id)?.company_name||(o.sales_channel==="retail"?"Розница":"—"))+'</td><td>'+dateRu(o.delivery_date)+'</td><td>'+orderReservations(o.id).map(r=>'<span class="reserve-pill">'+(itemById(r.item_id)?.name||"Позиция")+' × '+r.quantity+'</span>').join(" ")+'</td><td><div class="row-actions"><button class="small-btn" data-release="'+o.id+'">Удалить резерв</button><button class="small-btn" data-ship="'+o.id+'">Подтвердить отгрузку</button></div></td></tr>').join("")||'<tr><td colspan="5" class="empty">Активных резервов нет</td></tr>';
+ $("moneySummary").innerHTML=[["Оплаты",rub(totalPaid())],["Признанная выручка",rub(earnedRevenue())],["Закупки",rub(purchaseSpend())],["Операционные расходы",rub(operatingSpend())],["Затраты всего",rub(cashCosts())],["Списания",rub(writeoffValue())],["Прибыль",rub(totalProfit())]].map(x=>'<div class="metric-line"><span>'+x[0]+'</span><strong>'+x[1]+'</strong></div>').join("");
+ $("reserveTable").innerHTML=state.orders.filter(o=>o.status==="reserved").map(o=>'<tr><td>#'+o.order_no+'</td><td>'+(clientById(o.client_id)?.company_name||(o.sales_channel==="retail"?"Розница":"—"))+'</td><td>'+dateRu(o.delivery_date)+'</td><td><div class="row-actions"><button class="small-btn" data-release="'+o.id+'">Удалить резерв</button><button class="small-btn" data-transfer="'+o.id+'">Перенести цветы</button><button class="small-btn" data-ship="'+o.id+'">Подтвердить отгрузку</button></div></td></tr>').join("")||'<tr><td colspan="4" class="empty">Активных резервов нет</td></tr>';
  $("upcomingTable").innerHTML=state.orders.filter(o=>!["shipped","cancelled"].includes(o.status)).map(o=>'<tr><td>'+dateRu(o.delivery_date)+'</td><td>'+(clientById(o.client_id)?.company_name||(o.sales_channel==="retail"?"Розница":"—"))+'</td><td>'+channelLabel(o)+'</td><td>'+rub(o.sale_price)+'</td><td>'+badgeStatus(o.status)+'</td></tr>').join("")||'<tr><td colspan="5" class="empty">Поставок нет</td></tr>';
  renderInventory("fresh","freshTable");renderInventory("dried","driedTable");renderWarehouseSummary();
- const prs=[];state.purchaseItems.forEach(pi=>{const p=state.purchases.find(x=>x.id===pi.purchase_id),i=itemById(pi.item_id),o=p?.target_order_id?orderById(p.target_order_id):null;prs.push({p,i,pi,o})});
- $("purchaseTable").innerHTML=prs.map(x=>'<tr><td>'+dateRu(x.p?.purchase_date)+'</td><td>'+(x.i?.category==="fresh"?"Свежие":"Сухоцветы")+'</td><td>'+(x.i?.name||"—")+'</td><td>'+(x.i?.color||"—")+'</td><td>'+x.pi.quantity+'</td><td>'+rub(x.pi.unit_cost)+'</td><td>'+rub(x.pi.quantity*x.pi.unit_cost)+'</td><td>'+(x.o?"#"+x.o.order_no:"Свободный склад")+'</td><td><div class="row-actions"><button class="small-btn" data-duplicate-purchase="'+x.pi.id+'">Дублировать</button><button class="danger-btn" data-delete-purchase="'+x.p?.id+'">Отменить</button></div></td></tr>').join("")||'<tr><td colspan="9" class="empty">Закупок нет</td></tr>';
+ const purchaseRows=state.purchases.map(p=>{const lines=state.purchaseItems.filter(pi=>pi.purchase_id===p.id),total=lines.reduce((s,pi)=>s+Number(pi.quantity)*Number(pi.unit_cost),0),o=p.target_order_id?orderById(p.target_order_id):null;return{p,lines,total,o}});
+ $("purchaseTable").innerHTML=purchaseRows.map(x=>'<tr><td>'+dateRu(x.p.purchase_date)+'</td><td><strong>'+(x.p.title||"Закупка")+'</strong></td><td>'+(x.p.supplier||"—")+'</td><td>'+x.lines.length+'</td><td><strong>'+rub(x.total)+'</strong></td><td>'+(x.o?"#"+x.o.order_no+" · "+(clientById(x.o.client_id)?.company_name||""):"Свободный склад")+'</td><td><div class="row-actions"><button class="small-btn" data-view-purchase="'+x.p.id+'">Открыть</button><button class="small-btn" data-duplicate-purchase="'+x.p.id+'">Дублировать</button><button class="danger-btn" data-delete-purchase="'+x.p.id+'">Удалить</button></div></td></tr>').join("")||'<tr><td colspan="7" class="empty">Закупок нет</td></tr>';
  $("writeoffTable").innerHTML=state.writeoffs.map(w=>'<tr><td>'+dateRu(w.writeoff_date)+'</td><td>'+(itemById(w.item_id)?.name||"—")+'</td><td>'+w.quantity+'</td><td>'+w.reason+'</td><td>'+rub(w.quantity*w.unit_cost)+'</td><td><div class="row-actions"><button class="small-btn" data-edit-writeoff="'+w.id+'">Изменить</button><button class="danger-btn" data-delete-writeoff="'+w.id+'">Удалить</button></div></td></tr>').join("")||'<tr><td colspan="6" class="empty">Списаний нет</td></tr>';
  const visibleOrders=state.orders.filter(o=>currentOrderFilter==="all"||o.status===currentOrderFilter);
  $("ordersTable").innerHTML=visibleOrders.map(o=>'<tr><td>#'+o.order_no+'</td><td>'+(clientById(o.client_id)?.company_name||(o.sales_channel==="retail"?"Розница":"—"))+'</td><td>'+dateRu(o.delivery_date)+'</td><td>'+channelLabel(o)+'</td><td>'+rub(o.sale_price)+'</td><td>'+rub(orderCogs(o))+'</td><td>'+(o.status==="shipped"?rub(Number(o.sale_price)-orderCogs(o)-orderExpenses(o.id)):"—")+'</td><td>'+badgeStatus(o.status)+'</td><td><div class="row-actions">'+(o.status!=="shipped"?'<button class="small-btn" data-edit-order="'+o.id+'">Изменить</button><button class="danger-btn" data-delete-order="'+o.id+'">Удалить</button>':'')+'</div></td></tr>').join("")||'<tr><td colspan="9" class="empty">Заказов нет</td></tr>';
@@ -713,7 +767,7 @@ function fillOrderClients(){
  const list=activeClients().filter(c=>c.work_model===desired);
  $("orderClient").innerHTML=(channel==="retail"?'<option value="">— без карточки клиента —</option>':'')+list.map(c=>'<option value="'+c.id+'">'+c.company_name+'</option>').join("");
 }
-function bindDynamic(){document.querySelectorAll("[data-release]").forEach(b=>b.onclick=()=>releaseReserve(b.dataset.release));document.querySelectorAll("[data-ship]").forEach(b=>b.onclick=()=>shipOrder(b.dataset.ship));document.querySelectorAll("[data-edit-client]").forEach(b=>b.onclick=()=>editClient(b.dataset.editClient));document.querySelectorAll("[data-delete-client]").forEach(b=>b.onclick=()=>deleteClient(b.dataset.deleteClient));document.querySelectorAll("[data-edit-order]").forEach(b=>b.onclick=()=>editOrder(b.dataset.editOrder));document.querySelectorAll("[data-delete-order]").forEach(b=>b.onclick=()=>deleteOrder(b.dataset.deleteOrder));document.querySelectorAll("[data-edit-payment]").forEach(b=>b.onclick=()=>editPayment(b.dataset.editPayment));document.querySelectorAll("[data-delete-payment]").forEach(b=>b.onclick=()=>deletePayment(b.dataset.deletePayment));document.querySelectorAll("[data-edit-expense]").forEach(b=>b.onclick=()=>editExpense(b.dataset.editExpense));document.querySelectorAll("[data-delete-expense]").forEach(b=>b.onclick=()=>deleteExpense(b.dataset.deleteExpense));document.querySelectorAll("[data-edit-writeoff]").forEach(b=>b.onclick=()=>editWriteoff(b.dataset.editWriteoff));document.querySelectorAll("[data-delete-writeoff]").forEach(b=>b.onclick=()=>deleteWriteoff(b.dataset.deleteWriteoff));document.querySelectorAll("[data-kpi-target]").forEach(b=>b.onclick=()=>openKpi(b.dataset.kpiTarget));document.querySelectorAll("[data-edit-inventory]").forEach(b=>b.onclick=()=>editInventory(b.dataset.editInventory));document.querySelectorAll("[data-duplicate-inventory]").forEach(b=>b.onclick=()=>duplicateInventory(b.dataset.duplicateInventory));document.querySelectorAll("[data-delete-inventory]").forEach(b=>b.onclick=()=>deleteInventory(b.dataset.deleteInventory));document.querySelectorAll("[data-new-inventory]").forEach(b=>b.onclick=()=>{resetInventoryModal(b.dataset.newInventory);openModal("inventory")});document.querySelectorAll("[data-duplicate-purchase]").forEach(b=>b.onclick=()=>duplicatePurchase(b.dataset.duplicatePurchase));document.querySelectorAll("[data-delete-purchase]").forEach(b=>b.onclick=()=>deletePurchase(b.dataset.deletePurchase))}
+function bindDynamic(){document.querySelectorAll("[data-release]").forEach(b=>b.onclick=()=>releaseReserve(b.dataset.release));document.querySelectorAll("[data-ship]").forEach(b=>b.onclick=()=>shipOrder(b.dataset.ship));document.querySelectorAll("[data-edit-client]").forEach(b=>b.onclick=()=>editClient(b.dataset.editClient));document.querySelectorAll("[data-delete-client]").forEach(b=>b.onclick=()=>deleteClient(b.dataset.deleteClient));document.querySelectorAll("[data-edit-order]").forEach(b=>b.onclick=()=>editOrder(b.dataset.editOrder));document.querySelectorAll("[data-delete-order]").forEach(b=>b.onclick=()=>deleteOrder(b.dataset.deleteOrder));document.querySelectorAll("[data-edit-payment]").forEach(b=>b.onclick=()=>editPayment(b.dataset.editPayment));document.querySelectorAll("[data-delete-payment]").forEach(b=>b.onclick=()=>deletePayment(b.dataset.deletePayment));document.querySelectorAll("[data-edit-expense]").forEach(b=>b.onclick=()=>editExpense(b.dataset.editExpense));document.querySelectorAll("[data-delete-expense]").forEach(b=>b.onclick=()=>deleteExpense(b.dataset.deleteExpense));document.querySelectorAll("[data-edit-writeoff]").forEach(b=>b.onclick=()=>editWriteoff(b.dataset.editWriteoff));document.querySelectorAll("[data-delete-writeoff]").forEach(b=>b.onclick=()=>deleteWriteoff(b.dataset.deleteWriteoff));document.querySelectorAll("[data-kpi-target]").forEach(b=>b.onclick=()=>openKpi(b.dataset.kpiTarget));document.querySelectorAll("[data-edit-inventory]").forEach(b=>b.onclick=()=>editInventory(b.dataset.editInventory));document.querySelectorAll("[data-duplicate-inventory]").forEach(b=>b.onclick=()=>duplicateInventory(b.dataset.duplicateInventory));document.querySelectorAll("[data-delete-inventory]").forEach(b=>b.onclick=()=>deleteInventory(b.dataset.deleteInventory));document.querySelectorAll("[data-new-inventory]").forEach(b=>b.onclick=()=>{resetInventoryModal(b.dataset.newInventory);openModal("inventory")});document.querySelectorAll("[data-view-purchase]").forEach(b=>b.onclick=()=>viewPurchase(b.dataset.viewPurchase));document.querySelectorAll("[data-duplicate-purchase]").forEach(b=>b.onclick=()=>duplicatePurchase(b.dataset.duplicatePurchase));document.querySelectorAll("[data-delete-purchase]").forEach(b=>b.onclick=()=>deletePurchase(b.dataset.deletePurchase));document.querySelectorAll("[data-transfer]").forEach(b=>b.onclick=()=>openTransfer(b.dataset.transfer))}
 function openModal(id){$(id+"Modal").classList.add("open");const d=$(id+"Date");if(d&&!d.value)d.value=today();if(id==="client"&&!$("clientEditId").value){$("clientModalTitle").textContent="Новый клиент";$("saveClient").textContent="Создать клиента"}if(id==="order"&&!$("orderEditId").value){$("orderModalTitle").textContent="Новый заказ";$("saveOrder").textContent="Создать заказ";if(!$("reserveRows").children.length)addReserveRow()}}
 function closeAll(){document.querySelectorAll(".modal-backdrop").forEach(m=>m.classList.remove("open"))}
 function resetClientModal(){$("clientEditId").value="";["clientCompany","clientInn","clientContact","clientPhone","clientNotes","clientDefaultPrice"].forEach(x=>$(x).value="");$("clientPaid").checked=false;$("clientPaid").disabled=false;$("clientPaidHint").textContent="";$("clientStatus").value="Переговоры";$("clientModel").value="subscription";$("subscriptionFields").classList.remove("hidden");$("subStatus").value="active";$("subPaid").disabled=false;$("subPaid").classList.remove("readonly");toggleClientFields()}
@@ -778,8 +832,14 @@ async function deleteExpense(id){askConfirm({title:"Удалить расход?
 function resetWriteoffModal(){$("writeoffEditId").value="";$("writeoffModalTitle").textContent="Новое списание";$("writeoffQty").value=1}
 function editWriteoff(id){const w=state.writeoffs.find(x=>x.id===id);resetWriteoffModal();$("writeoffEditId").value=id;$("writeoffModalTitle").textContent="Редактировать списание";$("writeoffItem").value=w.item_id;$("writeoffQty").value=w.quantity;$("writeoffReason").value=w.reason;openModal("writeoff");$("writeoffDate")&&($("writeoffDate").value=String(w.writeoff_date).slice(0,10))}
 async function deleteWriteoff(id){askConfirm({title:"Отменить списание?",text:"Списанное количество будет возвращено обратно на физический склад.",okText:"Вернуть на склад",danger:true,onConfirm:()=>mutate("deleteWriteoff",{id},"Списание отменено")})}
-function duplicatePurchase(lineId){const pi=state.purchaseItems.find(x=>x.id===lineId),p=pi?state.purchases.find(x=>x.id===pi.purchase_id):null,i=pi?itemById(pi.item_id):null;if(!pi||!p||!i)return toast("Закупка не найдена.","error");$("purchaseType").value=i.category;$("purchaseDate").value=today();$("purchaseName").value=i.name;$("purchaseColor").value=i.color;$("purchaseQty").value=pi.quantity;$("purchaseUnitCost").value=pi.unit_cost;$("purchaseSupplier").value=p.supplier||"";$("purchaseTarget").value="";openModal("purchase")}
-async function deletePurchase(id){askConfirm({title:"Отменить закупку?",text:"CRM вычтет эту закупку из текущего склада. Если часть товара уже использована или находится в резерве, отмена будет остановлена с конкретной причиной.",okText:"Отменить закупку",danger:true,onConfirm:()=>mutate("deletePurchase",{id},"Закупка отменена")})}
+function resetPurchaseModal(){$("purchaseTitle").value="";$("purchaseDate").value=today();$("purchaseSupplier").value="";$("purchaseTarget").value="";$("purchaseNote").value="";$("purchaseRows").innerHTML="";addPurchaseRow()}
+function addPurchaseRow(data={}){const row=document.createElement("div");row.className="purchase-line";row.innerHTML='<div><label>Склад</label><select class="field-select purchase-category"><option value="fresh">Свежие</option><option value="dried">Сухоцветы</option></select></div><div><label>Позиция</label><input class="field purchase-name" list="flowerList" placeholder="Хризантема"></div><div><label>Цвет</label><input class="field purchase-color" placeholder="Белый"></div><div><label>Кол-во</label><input class="field purchase-qty" type="number" min="1" value="1"></div><div><label>Цена / шт.</label><input class="field purchase-cost" type="number" min="0" step="0.01" value="0"></div><button class="danger-btn" type="button">×</button>';row.querySelector(".purchase-category").value=data.category||"fresh";row.querySelector(".purchase-name").value=data.name||"";row.querySelector(".purchase-color").value=data.color||"";row.querySelector(".purchase-qty").value=data.quantity||1;row.querySelector(".purchase-cost").value=data.unit_cost||0;row.querySelector(".danger-btn").onclick=()=>{if($("purchaseRows").children.length>1)row.remove();updatePurchaseTotal()};row.querySelectorAll("input,select").forEach(el=>el.addEventListener("input",updatePurchaseTotal));$("purchaseRows").appendChild(row);updatePurchaseTotal()}
+function purchaseItemsPayload(){return[...document.querySelectorAll("#purchaseRows .purchase-line")].map(row=>({category:row.querySelector(".purchase-category").value,name:row.querySelector(".purchase-name").value.trim(),color:row.querySelector(".purchase-color").value.trim()||"Без цвета",quantity:Number(row.querySelector(".purchase-qty").value),unit_cost:Number(row.querySelector(".purchase-cost").value)})).filter(x=>x.name&&x.quantity>0&&x.unit_cost>=0)}
+function updatePurchaseTotal(){const total=[...document.querySelectorAll("#purchaseRows .purchase-line")].reduce((s,row)=>s+Number(row.querySelector(".purchase-qty").value||0)*Number(row.querySelector(".purchase-cost").value||0),0);$("purchaseTotal").textContent="Итого: "+rub(total)}
+function viewPurchase(id){const p=state.purchases.find(x=>x.id===id);if(!p)return;const lines=state.purchaseItems.filter(pi=>pi.purchase_id===id),o=p.target_order_id?orderById(p.target_order_id):null;$("purchaseDetailsTitle").textContent=p.title||"Закупка";$("purchaseDetailsMeta").textContent=dateRu(p.purchase_date)+" · "+(p.supplier||"без поставщика")+" · "+(o?"заказ #"+o.order_no:"свободный склад")+(p.note?" · "+p.note:"");$("purchaseDetailsBody").innerHTML=lines.map(pi=>{const i=itemById(pi.item_id);return'<div class="detail-item"><strong>'+(i?.name||"Позиция")+'</strong><span>'+(i?.color||"—")+'</span><span>'+pi.quantity+' шт.</span><strong>'+rub(pi.unit_cost)+'/шт.</strong></div>'}).join("")+'<div style="padding-top:10px"><strong>Итого: '+rub(lines.reduce((s,pi)=>s+Number(pi.quantity)*Number(pi.unit_cost),0))+'</strong></div>';openModal("purchaseDetails")}
+function duplicatePurchase(id){const p=state.purchases.find(x=>x.id===id);if(!p)return toast("Закупка не найдена.","error");resetPurchaseModal();$("purchaseTitle").value=(p.title||"Закупка")+" — копия";$("purchaseSupplier").value=p.supplier||"";$("purchaseNote").value=p.note||"";$("purchaseRows").innerHTML="";state.purchaseItems.filter(pi=>pi.purchase_id===id).forEach(pi=>{const i=itemById(pi.item_id);addPurchaseRow({category:i?.category||"fresh",name:i?.name||"",color:i?.color||"",quantity:pi.quantity,unit_cost:pi.unit_cost})});openModal("purchase")}
+async function deletePurchase(id){askConfirm({title:"Удалить закупку навсегда?",text:"Закупка полностью исчезнет из списка и истории, а её количество будет вычтено из текущего склада.",okText:"Удалить навсегда",danger:true,onConfirm:()=>mutate("deletePurchase",{id},"Закупка удалена")})}
+function openTransfer(orderId){const res=orderReservations(orderId);if(!res.length)return toast("В заказе нет резерва.","error");$("transferFromOrder").value=orderId;$("transferItem").innerHTML=res.map(r=>'<option value="'+r.item_id+'">'+(itemById(r.item_id)?.name||"Позиция")+' · '+(itemById(r.item_id)?.color||"")+' · '+r.quantity+' шт.</option>').join("");$("transferQty").value=1;$("transferToOrder").innerHTML=state.orders.filter(o=>o.id!==orderId&&["draft","reserved"].includes(o.status)).map(o=>'<option value="'+o.id+'">#'+o.order_no+' · '+(clientById(o.client_id)?.company_name||"Розница")+'</option>').join("");openModal("transfer")}
 function resetInventoryModal(category="fresh"){$("inventoryEditId").value="";$("inventoryModalTitle").textContent="Новая позиция";$("inventoryCategory").value=category;$("inventoryName").value="";$("inventoryColor").value="";$("inventoryAvgCost").value=0;$("inventoryAvgCost").disabled=true;$("inventoryAvgCost").classList.add("readonly")}
 function editInventory(id){const i=itemById(id);resetInventoryModal(i.category);$("inventoryEditId").value=id;$("inventoryModalTitle").textContent="Изменить позицию";$("inventoryName").value=i.name;$("inventoryColor").value=i.color;$("inventoryAvgCost").value=Number(i.avg_cost||0);$("inventoryAvgCost").disabled=false;$("inventoryAvgCost").classList.remove("readonly");openModal("inventory")}
 function duplicateInventory(id){const i=itemById(id);$("purchaseType").value=i.category;$("purchaseName").value=i.name;$("purchaseColor").value=i.color;$("purchaseQty").value=10;$("purchaseUnitCost").value=Number(i.avg_cost||0);$("purchaseSupplier").value="";$("purchaseTarget").value="";$("purchaseDate").value=today();openModal("purchase");toast("Копия подготовлена как новая закупка — измени цвет/название, количество или цену.")}
@@ -793,8 +853,8 @@ function autofillOrderPrice(){
 function orderPayload(){const channel=$("orderModel").value,client_id=$("orderClient").value||null,res=[];document.querySelectorAll("#reserveRows .reserve-row").forEach(row=>{const item_id=row.querySelector(".reserve-item").value,quantity=Number(row.querySelector(".reserve-qty").value);if(item_id&&quantity>0){const x=res.find(r=>r.item_id===item_id);x?x.quantity+=quantity:res.push({item_id,quantity})}});const subscription_id=channel==="subscription"?state.subscriptions.find(s=>s.client_id===client_id&&s.status==="active")?.id||null:null;return{id:$("orderEditId").value||undefined,client_id,subscription_id,delivery_date:$("orderDate").value||today(),sale_price:Number($("orderPrice").value||0),note:$("orderNote").value.trim(),reservations:res,sales_channel:channel}}
 document.querySelectorAll("[data-page]").forEach(b=>b.onclick=()=>{showPage(b.dataset.page);if(b.dataset.warehouseOpen)setWarehouseView(b.dataset.warehouseOpen)});
 document.querySelectorAll(".menu-trigger").forEach(b=>b.onclick=e=>{e.stopPropagation();const p=b.parentElement;document.querySelectorAll(".menu-dropdown").forEach(x=>{if(x!==p)x.classList.remove("open")});p.classList.toggle("open")});
-document.addEventListener("click",()=>document.querySelectorAll(".menu-dropdown").forEach(x=>x.classList.remove("open")));document.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>{if(b.dataset.open==="client")resetClientModal();if(b.dataset.open==="order")resetOrderModal();openModal(b.dataset.open)});document.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeAll);document.querySelectorAll(".modal-backdrop").forEach(m=>m.onclick=e=>{if(e.target===m)closeAll()});
-$("loginBtn").onclick=login;$("passwordInput").onkeydown=e=>{if(e.key==="Enter")login()};$("clientModel").onchange=toggleClientFields;$("orderModel").onchange=()=>{fillOrderClients();$("orderPrice").value=""};$("orderClient").onchange=autofillOrderPrice;$("addReserveRow").onclick=()=>addReserveRow();$("openPayment").onclick=()=>{resetPaymentModal();openModal("payment")};$("openExpense").onclick=()=>{resetExpenseModal();openModal("expense")};$("openWriteoff").onclick=()=>{resetWriteoffModal();$("writeoffDate").value=today();openModal("writeoff")};document.querySelectorAll(".client-tab").forEach(b=>b.onclick=()=>{currentClientFilter=b.dataset.clientFilter;render()});document.querySelectorAll(".order-tab").forEach(b=>b.onclick=()=>{currentOrderFilter=b.dataset.orderFilter;document.querySelectorAll(".order-tab").forEach(x=>x.classList.toggle("active",x===b));render()});
+document.addEventListener("click",()=>document.querySelectorAll(".menu-dropdown").forEach(x=>x.classList.remove("open")));document.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>{if(b.dataset.open==="client")resetClientModal();if(b.dataset.open==="order")resetOrderModal();if(b.dataset.open==="purchase")resetPurchaseModal();openModal(b.dataset.open)});document.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeAll);document.querySelectorAll(".modal-backdrop").forEach(m=>m.onclick=e=>{if(e.target===m)closeAll()});
+$("openPurchase").onclick=()=>{resetPurchaseModal();openModal("purchase")};$("addPurchaseRow").onclick=()=>addPurchaseRow();$("saveTransfer").onclick=async()=>{const p={from_order:$("transferFromOrder").value,to_order:$("transferToOrder").value,item_id:$("transferItem").value,quantity:Number($("transferQty").value)};if(!p.to_order||p.quantity<=0)return toast("Выбери заказ и количество.","error");await mutate("transferReservation",{payload:p},"Цветы перенесены")};$("loginBtn").onclick=login;$("passwordInput").onkeydown=e=>{if(e.key==="Enter")login()};$("clientModel").onchange=toggleClientFields;$("orderModel").onchange=()=>{fillOrderClients();$("orderPrice").value=""};$("orderClient").onchange=autofillOrderPrice;$("addReserveRow").onclick=()=>addReserveRow();$("openPayment").onclick=()=>{resetPaymentModal();openModal("payment")};$("openExpense").onclick=()=>{resetExpenseModal();openModal("expense")};$("openWriteoff").onclick=()=>{resetWriteoffModal();$("writeoffDate").value=today();openModal("writeoff")};document.querySelectorAll(".client-tab").forEach(b=>b.onclick=()=>{currentClientFilter=b.dataset.clientFilter;render()});document.querySelectorAll(".order-tab").forEach(b=>b.onclick=()=>{currentOrderFilter=b.dataset.orderFilter;document.querySelectorAll(".order-tab").forEach(x=>x.classList.toggle("active",x===b));render()});
 function applyTheme(){
  const light=localStorage.getItem("nastebel_theme")==="light";
  document.body.classList.toggle("light",light);
@@ -812,8 +872,8 @@ function setWarehouseView(v){
 }
 document.querySelectorAll(".warehouse-tab").forEach(b=>b.onclick=()=>setWarehouseView(b.dataset.warehouseView));
 $("newRetailOrder").onclick=()=>{resetOrderModal();$("orderModel").value="retail";$("orderClient").value="";openModal("order")};
-function syncSettingsForm(){if(!$("showMarkup"))return;$("showMarkup").checked=!!state.settings?.show_markup;$("markupMultiplier").value=Number(state.settings?.markup_multiplier||2.5)}
-$("saveSettings").onclick=async()=>{const mult=Number($("markupMultiplier").value);if(!Number.isFinite(mult)||mult<=0)return toast("Укажи корректный коэффициент.","error");await mutate("updateSettings",{payload:{show_markup:$("showMarkup").checked,markup_multiplier:mult}});syncSettingsForm();toast("Настройки сохранены.")};
+function syncSettingsForm(){if(!$("showMarkup"))return;const [a,b]=periodBounds();$("showMarkup").checked=!!state.settings?.show_markup;$("markupMultiplier").value=Number(state.settings?.markup_multiplier||2.5);$("reportStart").value=a;$("reportEnd").value=b}
+$("saveSettings").onclick=async()=>{const mult=Number($("markupMultiplier").value),a=$("reportStart").value,b=$("reportEnd").value;if(!Number.isFinite(mult)||mult<=0)return toast("Укажи корректный коэффициент.","error");if(!a||!b||a>b)return toast("Проверь период отчётности.","error");await mutate("updateSettings",{payload:{show_markup:$("showMarkup").checked,markup_multiplier:mult,report_start:a,report_end:b}},"Настройки сохранены");syncSettingsForm()};$("currentMonthBtn").onclick=()=>{const [a,b]=currentMonthBounds();$("reportStart").value=a;$("reportEnd").value=b};
 $("saveClient").onclick=async()=>{
  const company=$("clientCompany").value.trim();if(!company)return toast("Укажи имя или название клиента.","error");
  const edit=$("clientEditId").value,model=$("clientModel").value;
@@ -826,7 +886,7 @@ $("saveClient").onclick=async()=>{
  resetClientModal();
 };
 $("saveOrder").onclick=async()=>{const p=orderPayload();if(p.sales_channel!=="retail"&&!p.client_id)return toast("Выбери клиента.","error");await mutate(p.id?"updateOrder":"createOrder",{payload:p});resetOrderModal()};
-$("savePurchase").onclick=async()=>{const name=$("purchaseName").value.trim(),qty=Number($("purchaseQty").value),unit=Number($("purchaseUnitCost").value);if(!name||qty<=0||unit<0)return toast("Заполни позицию, количество и стоимость.","error");await mutate("createPurchase",{payload:{purchase_date:$("purchaseDate").value||today(),supplier:$("purchaseSupplier").value.trim(),target_order_id:$("purchaseTarget").value||null,items:[{category:$("purchaseType").value,name,color:$("purchaseColor").value.trim()||"Без цвета",quantity:qty,unit_cost:unit}]}})};
+$("savePurchase").onclick=async()=>{const items=purchaseItemsPayload();if(!items.length)return toast("Добавь хотя бы одну позицию закупки.","error");await mutate("createPurchase",{payload:{title:$("purchaseTitle").value.trim(),purchase_date:$("purchaseDate").value||today(),supplier:$("purchaseSupplier").value.trim(),target_order_id:$("purchaseTarget").value||null,note:$("purchaseNote").value.trim(),items}},"Закупка сохранена");resetPurchaseModal()};
 $("saveInventoryItem").onclick=async()=>{const id=$("inventoryEditId").value,name=$("inventoryName").value.trim(),cost=Number($("inventoryAvgCost").value||0);if(!name)return toast("Укажи название позиции.","error");if(cost<0)return toast("Цена не может быть отрицательной.","error");const p={id:id||undefined,category:$("inventoryCategory").value,name,color:$("inventoryColor").value.trim(),avg_cost:cost};await mutate(id?"updateInventoryItem":"createInventoryItem",{payload:p},id?"Позиция обновлена":"Позиция создана");resetInventoryModal()};
 $("savePayment").onclick=async()=>{const edit=$("paymentEditId").value,amount=Number($("paymentAmount").value),client_id=$("paymentClient").value;if(!client_id||amount<=0)return toast("Укажи клиента и сумму.","error");const p={id:edit||undefined,client_id,amount,payment_date:$("paymentDate").value||today(),note:$("paymentNote").value.trim(),subscription_id:state.subscriptions.find(s=>s.client_id===client_id&&s.status==="active")?.id||null};await mutate(edit?"updatePayment":"createPayment",{payload:p},edit?"Оплата обновлена":"Оплата добавлена");resetPaymentModal()};
 $("saveExpense").onclick=async()=>{const edit=$("expenseEditId").value,amount=Number($("expenseAmount").value);if(amount<=0)return toast("Укажи сумму.","error");await mutate(edit?"updateExpense":"createExpense",{payload:{id:edit||undefined,expense_date:$("expenseDate").value||today(),category:$("expenseCategory").value,description:$("expenseDescription").value.trim(),amount,order_id:$("expenseOrder").value||null}},edit?"Расход обновлён":"Расход добавлен");resetExpenseModal()};
