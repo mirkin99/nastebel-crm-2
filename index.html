@@ -141,6 +141,44 @@
     .warehouse-summary{display:grid;grid-template-columns:1fr 1fr;gap:16px}
     .row-actions{display:flex;gap:6px;white-space:nowrap}
     @media(max-width:900px){.nav-group-body{display:flex!important;gap:6px}.nav-group-head{display:none}.theme-toggle{width:auto;margin:0}.warehouse-summary{grid-template-columns:1fr}}
+  
+    .appbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:24px;padding:0 24px;height:58px;background:#15181a;border-bottom:1px solid var(--line)}
+    body.light .appbar{background:#eceeeb}
+    .appbar .brand{font-size:16px;letter-spacing:.16em;white-space:nowrap}
+    .menu-bar{display:flex;align-items:stretch;height:100%;gap:2px;flex:1}
+    .menu-dropdown{position:relative;display:flex;align-items:stretch}
+    .menu-trigger{border:0;background:transparent;color:#aab1b6;padding:0 13px;font-size:13px}
+    .menu-trigger:hover,.menu-dropdown.open>.menu-trigger{background:#22262a;color:#fff}
+    body.light .menu-trigger:hover,body.light .menu-dropdown.open>.menu-trigger{background:#dde1dd;color:#111}
+    .menu-popup{display:none;position:absolute;top:52px;left:0;min-width:210px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px;box-shadow:0 18px 45px rgba(0,0,0,.28);z-index:60}
+    .menu-dropdown:hover .menu-popup,.menu-dropdown.open .menu-popup{display:block}
+    .menu-popup button{width:100%;border:0;background:transparent;color:var(--soft);padding:10px 11px;text-align:left;border-radius:7px;font-size:13px}
+    .menu-popup button:hover{background:var(--panel-2);color:var(--text)}
+    .settings-link{border:0;background:transparent;color:#aab1b6;padding:0 13px}
+    .settings-link:hover{background:#22262a;color:#fff}
+    body.light .settings-link:hover{background:#dde1dd;color:#111}
+    .main{margin-left:0!important;padding:28px 32px 60px!important}
+    .sidebar{display:none!important}
+    .topbar{margin-bottom:22px}
+    .topbar .actions{display:none!important}
+    .settings-grid{display:grid;grid-template-columns:minmax(280px,520px);gap:14px}
+    .setting-row{display:flex;justify-content:space-between;gap:24px;align-items:center;padding:16px 0;border-bottom:1px solid var(--line)}
+    .switch{position:relative;width:44px;height:24px;display:inline-block}
+    .switch input{opacity:0;width:0;height:0}
+    .slider{position:absolute;inset:0;background:#3b4146;border-radius:999px;transition:.18s}
+    .slider:before{content:"";position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.18s}
+    .switch input:checked+.slider{background:#718d78}
+    .switch input:checked+.slider:before{transform:translateX(20px)}
+    .compact-input{width:110px}
+    .markup-cell{white-space:nowrap}
+    @media(max-width:900px){
+      .appbar{height:auto;min-height:58px;align-items:flex-start;padding:12px 14px;gap:12px;flex-wrap:wrap}
+      .menu-bar{height:auto;overflow-x:auto;width:100%;order:2}
+      .menu-dropdown{min-height:38px}
+      .menu-trigger,.settings-link{padding:0 10px;white-space:nowrap}
+      .menu-popup{top:38px}
+      .main{padding:20px 14px 50px!important}
+    }
   </style>
 </head>
 <body>
@@ -155,35 +193,40 @@
   </section>
 
   <div class="app hidden" id="app">
-    <aside class="sidebar">
+    <header class="appbar">
       <div class="brand">NASTEBEL</div>
-      <div class="nav-group">
-        <button class="nav-group-head">Основное</button>
-        <div class="nav-group-body"><button class="nav-btn active" data-page="dashboard"><span class="dot"></span>Главная</button></div>
-      </div>
-      <div class="nav-group">
-        <button class="nav-group-head">Склад</button>
-        <div class="nav-group-body"><button class="nav-btn" data-page="warehouse"><span class="dot"></span>Перейти на склад</button></div>
-      </div>
-      <div class="nav-group">
-        <button class="nav-group-head">Продажи</button>
-        <div class="nav-group-body">
-          <button class="nav-btn" data-page="orders"><span class="dot"></span>Заказы</button>
-          <button class="nav-btn" data-page="clients"><span class="dot"></span>Клиенты</button>
-          <button class="nav-btn" data-page="subscriptions"><span class="dot"></span>Подписки</button>
-          <button class="nav-btn" data-page="retail"><span class="dot"></span>Розница</button>
-        </div>
-      </div>
-      <div class="nav-group">
-        <button class="nav-group-head">Финансы</button>
-        <div class="nav-group-body"><button class="nav-btn" data-page="expenses"><span class="dot"></span>Расходы</button><button class="nav-btn" data-page="reports"><span class="dot"></span>Отчёты</button></div>
-      </div>
-      <div class="nav-group">
-        <button class="nav-group-head">Система</button>
-        <div class="nav-group-body"><button class="nav-btn" data-page="history"><span class="dot"></span>История</button></div>
-      </div>
-      <button class="secondary theme-toggle" id="themeToggle">☀ Светлая тема</button>
-    </aside>
+      <nav class="menu-bar">
+        <div class="menu-dropdown"><button class="menu-trigger">Главное</button><div class="menu-popup">
+          <button data-page="dashboard">Главная</button>
+        </div></div>
+        <div class="menu-dropdown"><button class="menu-trigger">Склад</button><div class="menu-popup">
+          <button data-page="warehouse" data-warehouse-open="overview">Общий склад</button>
+          <button data-page="warehouse" data-warehouse-open="fresh">Свежие цветы</button>
+          <button data-page="warehouse" data-warehouse-open="dried">Сухоцветы</button>
+          <button data-page="warehouse" data-warehouse-open="purchases">Закупки</button>
+          <button data-page="warehouse" data-warehouse-open="writeoffs">Списания</button>
+        </div></div>
+        <div class="menu-dropdown"><button class="menu-trigger">Продажи</button><div class="menu-popup">
+          <button data-page="orders">Заказы</button>
+          <button data-page="clients">Клиенты</button>
+          <button data-page="subscriptions">Подписки</button>
+          <button data-page="retail">Розница</button>
+        </div></div>
+        <div class="menu-dropdown"><button class="menu-trigger">Финансы</button><div class="menu-popup">
+          <button data-page="expenses">Расходы</button>
+          <button data-page="reports">Отчёты</button>
+        </div></div>
+        <div class="menu-dropdown"><button class="menu-trigger">Система</button><div class="menu-popup">
+          <button data-page="history">История</button>
+        </div></div>
+        <div class="menu-dropdown"><button class="menu-trigger">Создать</button><div class="menu-popup">
+          <button data-open="purchase">+ Закупка</button>
+          <button data-open="client">+ Клиент</button>
+          <button data-open="order">+ Заказ</button>
+        </div></div>
+        <button class="settings-link" data-page="settings">Настройки</button>
+      </nav>
+    </header>
 
     <main class="main">
       <header class="topbar">
@@ -259,10 +302,10 @@
         <div id="warehouse-overview" class="warehouse-view">
           <div class="warehouse-summary">
             <div class="card"><div class="card-head"><div><h2>Свежие цветы</h2><div class="card-desc">Суммарная стоимость по каждой позиции</div></div></div>
-              <div class="table-wrap"><table><thead><tr><th>Цветы</th><th>Стоимость остатка</th></tr></thead><tbody id="freshValueTable"></tbody><tfoot><tr><td><strong>Итого</strong></td><td id="freshValueTotal"></td></tr></tfoot></table></div>
+              <div class="table-wrap"><table><thead><tr><th>Позиция</th><th>Цвет</th><th>Остаток</th><th>Ср. цена</th><th>Стоимость остатка</th></tr></thead><tbody id="freshValueTable"></tbody><tfoot><tr><td colspan="4"><strong>Итого</strong></td><td id="freshValueTotal"></td></tr></tfoot></table></div>
             </div>
             <div class="card"><div class="card-head"><div><h2>Сухоцветы</h2><div class="card-desc">Суммарная стоимость по каждой позиции</div></div></div>
-              <div class="table-wrap"><table><thead><tr><th>Сухоцветы</th><th>Стоимость остатка</th></tr></thead><tbody id="driedValueTable"></tbody><tfoot><tr><td><strong>Итого</strong></td><td id="driedValueTotal"></td></tr></tfoot></table></div>
+              <div class="table-wrap"><table><thead><tr><th>Позиция</th><th>Цвет</th><th>Остаток</th><th>Ср. цена</th><th>Стоимость остатка</th></tr></thead><tbody id="driedValueTable"></tbody><tfoot><tr><td colspan="4"><strong>Итого</strong></td><td id="driedValueTotal"></td></tr></tfoot></table></div>
             </div>
           </div>
         </div>
@@ -276,7 +319,7 @@
         <div class="card">
           <div class="card-head"><div><h2>Склад свежих цветов</h2><div class="card-desc">Вид цветка + цвет. Без углубления в сорта.</div></div></div>
           <div class="table-wrap"><table>
-            <thead><tr><th>Цветок</th><th>Цвет</th><th>Всего</th><th>В резерве</th><th>Свободно</th><th>Ср. себестоимость</th></tr></thead>
+            <thead><tr><th>Цветок</th><th>Цвет</th><th>Всего</th><th>В резерве</th><th>Свободно</th><th>Ср. себестоимость</th><th class="markup-head hidden">Рек. цена</th></tr></thead>
             <tbody id="freshTable"></tbody>
           </table></div>
         </div>
@@ -286,7 +329,7 @@
         <div class="card">
           <div class="card-head"><div><h2>Склад сухоцветов</h2><div class="card-desc">Отдельный учёт от свежих цветов</div></div></div>
           <div class="table-wrap"><table>
-            <thead><tr><th>Позиция</th><th>Цвет</th><th>Всего</th><th>В резерве</th><th>Свободно</th><th>Ср. себестоимость</th></tr></thead>
+            <thead><tr><th>Позиция</th><th>Цвет</th><th>Всего</th><th>В резерве</th><th>Свободно</th><th>Ср. себестоимость</th><th class="markup-head hidden">Рек. цена</th></tr></thead>
             <tbody id="driedTable"></tbody>
           </table></div>
         </div>
@@ -371,6 +414,27 @@
           <div class="card-head"><div><h2>Логика прибыли</h2><div class="card-desc">Предоплата не становится заработанной выручкой до фактической отгрузки</div></div></div>
           <div class="notice">
             <strong>Пример:</strong> клиент оплатил подписку на 15 000 ₽ за 3 поставки. До отгрузки это отображается как полученная оплата. После первой подтверждённой поставки на 5 000 ₽ система признаёт только эти 5 000 ₽ заработанной выручкой, вычитает фактическую себестоимость цветов и связанные расходы — и только тогда показывает прибыль по поставке.
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="page-settings">
+        <div class="settings-grid">
+          <div class="card">
+            <div class="card-head"><div><h2>Настройки отображения</h2><div class="card-desc">Эти параметры сохраняются для всей CRM</div></div></div>
+            <div class="setting-row">
+              <div><strong>Показывать рекомендуемую цену</strong><div class="card-desc">Добавляет колонку в склад свежих цветов и сухоцветов</div></div>
+              <label class="switch"><input id="showMarkup" type="checkbox"><span class="slider"></span></label>
+            </div>
+            <div class="setting-row">
+              <div><strong>Коэффициент наценки</strong><div class="card-desc">Например, 2.5: закупка 65 ₽ → рекомендация 163 ₽</div></div>
+              <input class="field compact-input" id="markupMultiplier" type="number" min="0.1" step="0.1" value="2.5">
+            </div>
+            <div class="setting-row">
+              <div><strong>Тема интерфейса</strong><div class="card-desc">Светлая или тёмная</div></div>
+              <button class="secondary" id="themeToggle">☀ Светлая тема</button>
+            </div>
+            <div style="margin-top:18px"><button class="primary" id="saveSettings">Сохранить настройки</button></div>
           </div>
         </div>
       </section>
@@ -479,7 +543,7 @@
   <script>
 const API_URL="https://xjvktqjlooquiewkvsmk.supabase.co/functions/v1/nastebel-crm-api";
 let sessionToken=localStorage.getItem("nastebel_crm_session")||"";
-let state={clients:[],subscriptions:[],inventory:[],orders:[],reservations:[],purchases:[],purchaseItems:[],payments:[],expenses:[],writeoffs:[],history:[]};
+let state={clients:[],subscriptions:[],inventory:[],orders:[],reservations:[],purchases:[],purchaseItems:[],payments:[],expenses:[],writeoffs:[],history:[],settings:{show_markup:false,markup_multiplier:2.5}};
 const $=id=>document.getElementById(id),rub=n=>new Intl.NumberFormat("ru-RU",{maximumFractionDigits:0}).format(Math.round(Number(n)||0))+" ₽",today=()=>new Date().toISOString().slice(0,10),dateRu=d=>d?new Date(String(d).slice(0,10)+"T12:00:00").toLocaleDateString("ru-RU"):"—";
 const clientById=id=>state.clients.find(x=>x.id===id),itemById=id=>state.inventory.find(x=>x.id===id),orderById=id=>state.orders.find(x=>x.id===id),orderReservations=id=>state.reservations.filter(r=>r.order_id===id);
 const reservedQty=id=>state.reservations.filter(r=>r.item_id===id&&orderById(r.order_id)?.status==="reserved").reduce((s,r)=>s+Number(r.quantity),0),freeQty=i=>Math.max(0,Number(i.quantity)-reservedQty(i.id));
@@ -492,11 +556,29 @@ async function api(action,payload={}){const headers={"Content-Type":"application
 async function loadData(){state=(await api("load")).data||state;render()}
 function showApp(){$("loginScreen").classList.add("hidden");$("app").classList.remove("hidden")}function showLogin(){$("loginScreen").classList.remove("hidden");$("app").classList.add("hidden")}
 async function login(){try{const r=await api("login",{password:$("passwordInput").value});sessionToken=r.token;localStorage.setItem("nastebel_crm_session",sessionToken);showApp();await loadData()}catch(e){$("loginError").textContent=e.message;$("loginError").classList.remove("hidden")}}
-const pageMeta={dashboard:["Главная","Общая картина бизнеса на сегодня"],warehouse:["Склад","Общий склад и движения товара"],fresh:["Свежие цветы","Физический склад"],dried:["Сухоцветы","Отдельный склад"],purchases:["Закупки","История закупок"],writeoffs:["Списания","Потери и причины"],orders:["Заказы","Все продажи и поставки"],clients:["Клиенты","Карточки клиентов"],subscriptions:["Подписки","Сроки и поставки"],retail:["Розница","Розничные продажи"],expenses:["Расходы","Операционные расходы"],reports:["Отчёты","Выручка и прибыль"],history:["История","Движение товара и денег"]};
-function showPage(name){document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));$("page-"+name).classList.add("active");document.querySelectorAll(".nav-btn").forEach(x=>x.classList.toggle("active",x.dataset.page===name));$("pageTitle").textContent=pageMeta[name][0];$("pageSubtitle").textContent=pageMeta[name][1]}
+const pageMeta={dashboard:["Главная","Общая картина бизнеса на сегодня"],warehouse:["Склад","Общий склад и движения товара"],fresh:["Свежие цветы","Физический склад"],dried:["Сухоцветы","Отдельный склад"],purchases:["Закупки","История закупок"],writeoffs:["Списания","Потери и причины"],orders:["Заказы","Все продажи и поставки"],clients:["Клиенты","Карточки клиентов"],subscriptions:["Подписки","Сроки и поставки"],retail:["Розница","Розничные продажи"],expenses:["Расходы","Операционные расходы"],reports:["Отчёты","Выручка и прибыль"],history:["История","Движение товара и денег"],settings:["Настройки","Конфигурация интерфейса и расчётов"]};
+function showPage(name){
+ document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
+ $("page-"+name).classList.add("active");
+ $("pageTitle").textContent=pageMeta[name][0];$("pageSubtitle").textContent=pageMeta[name][1];
+ document.querySelectorAll(".menu-dropdown").forEach(x=>x.classList.remove("open"));
+ if(name==="settings")syncSettingsForm();
+}
 function badgeStatus(s){const m={reserved:["В резерве","warn"],shipped:["Отгружен","ok"],draft:["Черновик",""],cancelled:["Отменён","danger"]},a=m[s]||[s,""];return '<span class="badge '+a[1]+'">'+a[0]+'</span>'}
-function renderInventory(type,target){const rows=state.inventory.filter(i=>i.category===type).sort((a,b)=>a.name.localeCompare(b.name,"ru")).map(i=>'<tr><td><strong>'+i.name+'</strong></td><td>'+i.color+'</td><td>'+i.quantity+' шт.</td><td>'+reservedQty(i.id)+' шт.</td><td>'+freeQty(i)+' шт.</td><td>'+rub(i.avg_cost)+'</td></tr>').join("");$(target).innerHTML=rows||'<tr><td colspan="6" class="empty">Пока пусто</td></tr>'}
-function renderWarehouseSummary(){for(const type of ["fresh","dried"]){const items=state.inventory.filter(i=>i.category===type),target=type==="fresh"?"freshValueTable":"driedValueTable",total=items.reduce((s,i)=>s+Number(i.quantity)*Number(i.avg_cost),0);$(target).innerHTML=items.map(i=>'<tr><td><strong>'+i.name+'</strong> · '+i.color+'</td><td>'+rub(Number(i.quantity)*Number(i.avg_cost))+'</td></tr>').join("")||'<tr><td colspan="2" class="empty">Пусто</td></tr>';$(type+"ValueTotal").textContent=rub(total)}}
+function renderInventory(type,target){
+ const show=!!state.settings?.show_markup,mult=Number(state.settings?.markup_multiplier||2.5);
+ document.querySelectorAll(".markup-head").forEach(x=>x.classList.toggle("hidden",!show));
+ const rows=state.inventory.filter(i=>i.category===type&&Number(i.quantity)>0).sort((a,b)=>a.name.localeCompare(b.name,"ru")).map(i=>'<tr><td><strong>'+i.name+'</strong></td><td>'+i.color+'</td><td>'+i.quantity+' шт.</td><td>'+reservedQty(i.id)+' шт.</td><td>'+freeQty(i)+' шт.</td><td>'+rub(i.avg_cost)+'</td>'+(show?'<td class="markup-cell"><strong>'+rub(Number(i.avg_cost)*mult)+'</strong> <span class="card-desc">×'+mult+'</span></td>':'')+'</tr>').join("");
+ $(target).innerHTML=rows||'<tr><td colspan="'+(show?7:6)+'" class="empty">Пока пусто</td></tr>';
+}
+function renderWarehouseSummary(){
+ for(const type of ["fresh","dried"]){
+  const items=state.inventory.filter(i=>i.category===type&&Number(i.quantity)>0).sort((a,b)=>a.name.localeCompare(b.name,"ru"));
+  const target=type==="fresh"?"freshValueTable":"driedValueTable",total=items.reduce((s,i)=>s+Number(i.quantity)*Number(i.avg_cost),0);
+  $(target).innerHTML=items.map(i=>'<tr><td><strong>'+i.name+'</strong></td><td>'+i.color+'</td><td>'+i.quantity+' шт.</td><td>'+rub(i.avg_cost)+'</td><td>'+rub(Number(i.quantity)*Number(i.avg_cost))+'</td></tr>').join("")||'<tr><td colspan="5" class="empty">Пусто</td></tr>';
+  $(type+"ValueTotal").textContent=rub(total);
+ }
+}
 function render(){
  const k=[["Стоимость склада",rub(inventoryValue()),"Физический остаток"],["В резерве",state.inventory.reduce((s,i)=>s+reservedQty(i.id),0)+" шт.","Под заказы"],["Получено оплат",rub(totalPaid()),"Поступившие деньги"],["Заработано",rub(earnedRevenue()),"Подтверждённые отгрузки"],["Прибыль",rub(totalProfit()),"После затрат"],["Списания",rub(writeoffValue()),"По себестоимости"]];
  const kh=k.map(x=>'<div class="kpi"><div class="kpi-label">'+x[0]+'</div><div class="kpi-value">'+x[1]+'</div><div class="kpi-note">'+x[2]+'</div></div>').join("");$("kpiGrid").innerHTML=kh;$("reportKpis").innerHTML=kh;
@@ -513,7 +595,7 @@ function render(){
  $("subscriptionsTable").innerHTML=state.subscriptions.map(s=>{const c=clientById(s.client_id),total=s.months*s.deliveries_per_month,del=state.orders.filter(o=>o.subscription_id===s.id&&o.status==="shipped").length,pct=total?Math.min(100,Math.round(del/total*100)):0;return '<tr><td><strong>'+(c?.company_name||"—")+'</strong></td><td>'+dateRu(s.start_date)+' · '+s.months+' мес.</td><td>'+del+' из '+total+'</td><td>'+rub(s.bouquet_price)+'</td><td>'+rub(state.payments.filter(p=>p.subscription_id===s.id).reduce((a,p)=>a+Number(p.amount),0))+'</td><td><div class="progress-row">'+pct+'%<div class="progress"><span style="width:'+pct+'%"></span></div></div></td><td><span class="badge">'+s.status+'</span></td></tr>'}).join("")||'<tr><td colspan="7" class="empty">Подписок нет</td></tr>';
  $("expensesTable").innerHTML=state.expenses.map(e=>'<tr><td>'+dateRu(e.expense_date)+'</td><td>'+e.category+'</td><td>'+(e.description||"—")+'</td><td>'+(e.order_id?"#"+orderById(e.order_id)?.order_no:"Общий расход")+'</td><td>'+rub(e.amount)+'</td></tr>').join("")||'<tr><td colspan="5" class="empty">Расходов нет</td></tr>';
  const hist=state.history;$("historyTable").innerHTML=hist.map(h=>'<tr><td>'+new Date(h.event_date).toLocaleString("ru-RU")+'</td><td>'+h.event_type+'</td><td>'+h.description+'</td><td>'+(clientById(h.client_id)?.company_name||"—")+'</td><td>'+(h.amount?rub(h.amount):"—")+'</td></tr>').join("")||'<tr><td colspan="5" class="empty">История пуста</td></tr>';$("recentHistoryTable").innerHTML=hist.slice(0,6).map(h=>'<tr><td>'+new Date(h.event_date).toLocaleDateString("ru-RU")+'</td><td>'+h.event_type+'</td><td>'+h.description+'</td><td>'+(clientById(h.client_id)?.company_name||"—")+'</td><td>'+(h.amount?rub(h.amount):"—")+'</td></tr>').join("")||'<tr><td colspan="5" class="empty">Операций нет</td></tr>';
- fillSelects();bindDynamic();
+ fillSelects();bindDynamic();if($("page-settings")?.classList.contains("active"))syncSettingsForm();
 }
 function fillSelects(){$("orderClient").innerHTML='<option value="">— без клиента —</option>'+state.clients.map(c=>'<option value="'+c.id+'">'+c.company_name+'</option>').join("");$("purchaseTarget").innerHTML='<option value="">Свободный склад</option>'+state.orders.filter(o=>["draft","reserved"].includes(o.status)).map(o=>'<option value="'+o.id+'">#'+o.order_no+' · '+(clientById(o.client_id)?.company_name||"Розница")+'</option>').join("");$("expenseOrder").innerHTML='<option value="">Общий расход</option>'+state.orders.map(o=>'<option value="'+o.id+'">#'+o.order_no+'</option>').join("");$("writeoffItem").innerHTML=state.inventory.map(i=>'<option value="'+i.id+'">'+i.name+' · '+i.color+' · свободно '+freeQty(i)+'</option>').join("")}
 function bindDynamic(){document.querySelectorAll("[data-release]").forEach(b=>b.onclick=()=>releaseReserve(b.dataset.release));document.querySelectorAll("[data-ship]").forEach(b=>b.onclick=()=>shipOrder(b.dataset.ship));document.querySelectorAll("[data-edit-client]").forEach(b=>b.onclick=()=>editClient(b.dataset.editClient));document.querySelectorAll("[data-delete-client]").forEach(b=>b.onclick=()=>deleteClient(b.dataset.deleteClient));document.querySelectorAll("[data-edit-order]").forEach(b=>b.onclick=()=>editOrder(b.dataset.editOrder));document.querySelectorAll("[data-delete-order]").forEach(b=>b.onclick=()=>deleteOrder(b.dataset.deleteOrder))}
@@ -529,11 +611,27 @@ async function deleteClient(id){if(confirm("Удалить клиента? Эт�
 function editOrder(id){const o=orderById(id);resetOrderModal();$("orderEditId").value=id;$("orderClient").value=o.client_id||"";$("orderModel").value=o.sales_channel|| (o.subscription_id?"subscription":"one_off");$("orderDate").value=String(o.delivery_date).slice(0,10);$("orderPrice").value=o.sale_price;$("orderNote").value=o.note||"";orderReservations(id).forEach(r=>addReserveRow(r.item_id,r.quantity));$("orderModalTitle").textContent="Редактировать заказ #"+o.order_no;$("saveOrder").textContent="Сохранить изменения";openModal("order")}
 async function deleteOrder(id){if(confirm("Удалить заказ? Резерв этого заказа будет освобождён."))await mutate("deleteOrder",{id})}
 function orderPayload(){const channel=$("orderModel").value,client_id=$("orderClient").value||null,res=[];document.querySelectorAll("#reserveRows .reserve-row").forEach(row=>{const item_id=row.querySelector(".reserve-item").value,quantity=Number(row.querySelector(".reserve-qty").value);if(item_id&&quantity>0){const x=res.find(r=>r.item_id===item_id);x?x.quantity+=quantity:res.push({item_id,quantity})}});const subscription_id=channel==="subscription"?state.subscriptions.find(s=>s.client_id===client_id&&s.status==="active")?.id||null:null;return{id:$("orderEditId").value||undefined,client_id,subscription_id,delivery_date:$("orderDate").value||today(),sale_price:Number($("orderPrice").value||0),note:$("orderNote").value.trim(),reservations:res,sales_channel:channel}}
-document.querySelectorAll(".nav-btn").forEach(b=>b.onclick=()=>showPage(b.dataset.page));document.querySelectorAll(".nav-group-head").forEach(b=>b.onclick=()=>b.parentElement.classList.toggle("open"));document.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>{if(b.dataset.open==="client")resetClientModal();if(b.dataset.open==="order")resetOrderModal();openModal(b.dataset.open)});document.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeAll);document.querySelectorAll(".modal-backdrop").forEach(m=>m.onclick=e=>{if(e.target===m)closeAll()});
+document.querySelectorAll("[data-page]").forEach(b=>b.onclick=()=>{showPage(b.dataset.page);if(b.dataset.warehouseOpen)setWarehouseView(b.dataset.warehouseOpen)});
+document.querySelectorAll(".menu-trigger").forEach(b=>b.onclick=e=>{e.stopPropagation();const p=b.parentElement;document.querySelectorAll(".menu-dropdown").forEach(x=>{if(x!==p)x.classList.remove("open")});p.classList.toggle("open")});
+document.addEventListener("click",()=>document.querySelectorAll(".menu-dropdown").forEach(x=>x.classList.remove("open")));document.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>{if(b.dataset.open==="client")resetClientModal();if(b.dataset.open==="order")resetOrderModal();openModal(b.dataset.open)});document.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeAll);document.querySelectorAll(".modal-backdrop").forEach(m=>m.onclick=e=>{if(e.target===m)closeAll()});
 $("loginBtn").onclick=login;$("passwordInput").onkeydown=e=>{if(e.key==="Enter")login()};$("clientModel").onchange=e=>$("subscriptionFields").classList.toggle("hidden",e.target.value!=="subscription"||!!$("clientEditId").value);$("addReserveRow").onclick=()=>addReserveRow();$("openExpense").onclick=()=>openModal("expense");$("openWriteoff").onclick=()=>openModal("writeoff");
-$("themeToggle").onclick=()=>{document.body.classList.toggle("light");const light=document.body.classList.contains("light");localStorage.setItem("nastebel_theme",light?"light":"dark");$("themeToggle").textContent=light?"☾ Тёмная тема":"☀ Светлая тема"};if(localStorage.getItem("nastebel_theme")==="light"){$("themeToggle").click()}
-document.querySelectorAll(".warehouse-tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".warehouse-tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.querySelectorAll(".warehouse-view").forEach(x=>x.classList.add("hidden"));const v=b.dataset.warehouseView;if(v==="overview")$("warehouse-overview").classList.remove("hidden");else{const source=$("page-"+v);const target=$("warehouse-"+v);if(!target.children.length)target.append(...Array.from(source.children));target.classList.remove("hidden")}}); 
+function applyTheme(){
+ const light=localStorage.getItem("nastebel_theme")==="light";
+ document.body.classList.toggle("light",light);
+ if($("themeToggle"))$("themeToggle").textContent=light?"☾ Тёмная тема":"☀ Светлая тема";
+}
+$("themeToggle").onclick=()=>{localStorage.setItem("nastebel_theme",document.body.classList.contains("light")?"dark":"light");applyTheme()};
+applyTheme()
+function setWarehouseView(v){
+ document.querySelectorAll(".warehouse-tab").forEach(x=>x.classList.toggle("active",x.dataset.warehouseView===v));
+ document.querySelectorAll(".warehouse-view").forEach(x=>x.classList.add("hidden"));
+ if(v==="overview")$("warehouse-overview").classList.remove("hidden");
+ else{const source=$("page-"+v),target=$("warehouse-"+v);if(!target.children.length)target.append(...Array.from(source.children));target.classList.remove("hidden")}
+}
+document.querySelectorAll(".warehouse-tab").forEach(b=>b.onclick=()=>setWarehouseView(b.dataset.warehouseView));
 $("newRetailOrder").onclick=()=>{resetOrderModal();$("orderModel").value="retail";$("orderClient").value="";openModal("order")};
+function syncSettingsForm(){if(!$("showMarkup"))return;$("showMarkup").checked=!!state.settings?.show_markup;$("markupMultiplier").value=Number(state.settings?.markup_multiplier||2.5)}
+$("saveSettings").onclick=async()=>{const mult=Number($("markupMultiplier").value);if(!Number.isFinite(mult)||mult<=0)return alert("Укажи корректный коэффициент.");await mutate("updateSettings",{payload:{show_markup:$("showMarkup").checked,markup_multiplier:mult}});syncSettingsForm();alert("Настройки сохранены.")};
 $("saveClient").onclick=async()=>{const company=$("clientCompany").value.trim();if(!company)return alert("Укажи название компании.");const edit=$("clientEditId").value,p={id:edit||undefined,company_name:company,inn:$("clientInn").value.trim(),contact_name:$("clientContact").value.trim(),contact_info:$("clientPhone").value.trim(),status:$("clientStatus").value,work_model:$("clientModel").value,initial_payment:0,subscription:null};if(!edit&&p.work_model==="subscription")p.subscription={start_date:$("subStart").value||today(),months:Number($("subMonths").value||1),deliveries_per_month:Number($("subDeliveries").value||3),bouquet_price:Number($("subBouquetPrice").value||0),discount_percent:Number($("subDiscount").value||0)},p.initial_payment=Number($("subPaid").value||0);await mutate(edit?"updateClient":"createClient",{payload:p})};
 $("saveOrder").onclick=async()=>{const p=orderPayload();if(p.sales_channel!=="retail"&&!p.client_id)return alert("Выбери клиента.");await mutate(p.id?"updateOrder":"createOrder",{payload:p});resetOrderModal()};
 $("savePurchase").onclick=async()=>{const name=$("purchaseName").value.trim(),qty=Number($("purchaseQty").value),unit=Number($("purchaseUnitCost").value);if(!name||qty<=0||unit<0)return alert("Заполни позицию, количество и стоимость.");await mutate("createPurchase",{payload:{purchase_date:$("purchaseDate").value||today(),supplier:$("purchaseSupplier").value.trim(),target_order_id:$("purchaseTarget").value||null,items:[{category:$("purchaseType").value,name,color:$("purchaseColor").value.trim()||"Без цвета",quantity:qty,unit_cost:unit}]}})};
