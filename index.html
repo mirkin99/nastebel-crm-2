@@ -248,6 +248,96 @@
     .order-chain{display:grid;gap:7px;font-size:12px;color:var(--soft)}
     .order-chain strong{color:var(--text)}
     @media(max-width:700px){.purchase-edit-grid{grid-template-columns:1fr 1fr}.client-order-top{flex-direction:column}}
+  
+    .mobile-menu-toggle{display:none;border:0;background:transparent;color:var(--text);font-size:24px;line-height:1;padding:8px 10px;border-radius:10px}
+    .mobile-menu-backdrop{display:none}
+
+    @media(max-width:700px){
+      html,body{max-width:100%;overflow-x:hidden}
+      .appbar{position:sticky;top:0;z-index:80;height:54px;min-height:54px;padding:0 12px;display:flex;align-items:center;gap:8px;flex-wrap:nowrap}
+      .mobile-menu-toggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+      .appbar .brand{font-size:14px;flex:1}
+      .menu-bar{
+        position:fixed;left:0;top:0;bottom:0;z-index:100;width:min(82vw,320px);height:100dvh;
+        display:flex;flex-direction:column;align-items:stretch;gap:4px;padding:18px 12px 24px;
+        background:#15181a;border-right:1px solid var(--line);overflow-y:auto;overflow-x:hidden;
+        transform:translateX(-102%);transition:transform .22s ease;box-shadow:18px 0 50px rgba(0,0,0,.32)
+      }
+      body.light .menu-bar{background:#eceeeb}
+      body.mobile-menu-open .menu-bar{transform:translateX(0)}
+      .mobile-menu-backdrop{position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;display:block;transition:opacity .22s ease}
+      body.mobile-menu-open .mobile-menu-backdrop{opacity:1;pointer-events:auto}
+      body.mobile-menu-open{overflow:hidden}
+      .menu-bar::before{
+        content:"NASTEBEL";display:block;padding:7px 10px 15px;font-size:15px;font-weight:700;
+        letter-spacing:.16em;color:var(--text);border-bottom:1px solid var(--line);margin-bottom:6px
+      }
+      .settings-link,.menu-trigger{
+        width:100%;min-height:44px;padding:0 12px!important;text-align:left;border-radius:10px;
+        display:flex;align-items:center;justify-content:space-between;white-space:normal!important;color:var(--soft)
+      }
+      .menu-dropdown{display:block;min-height:0!important;width:100%}
+      .menu-popup{position:static;min-width:0;width:100%;box-shadow:none;border:0;background:transparent;padding:2px 0 5px 12px;display:none}
+      .menu-dropdown:hover .menu-popup{display:none}
+      .menu-dropdown.open .menu-popup{display:block}
+      .menu-popup button{min-height:42px;padding:9px 12px;font-size:13px}
+      .menu-trigger::after{content:"›";font-size:18px;transition:transform .18s}
+      .menu-dropdown.open>.menu-trigger::after{transform:rotate(90deg)}
+      .main{padding:14px 10px 28px!important;width:100%;max-width:100%}
+      .topbar{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+      .title h1{font-size:23px}
+      .title p{font-size:12px;margin-top:4px}
+      .kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px}
+      .kpi{padding:13px 12px;min-width:0}
+      .kpi-value{font-size:20px}
+      .kpi-label,.kpi-note{white-space:normal}
+      .grid-2,.warehouse-summary{grid-template-columns:1fr!important;gap:10px}
+      .card{padding:13px;border-radius:12px;margin-bottom:10px;min-width:0}
+      .card-head{align-items:flex-start;gap:10px;margin-bottom:11px}
+      .card h2{font-size:15px}
+      .section-tools,.warehouse-tabs,.segmented{width:100%;max-width:100%;overflow:visible}
+      .warehouse-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+      .warehouse-tabs button{width:100%;white-space:normal}
+      .period-bar{gap:8px;align-items:center;flex-wrap:wrap}
+      .period-bar .small-btn{margin-left:auto}
+      .table-wrap{overflow:visible;max-width:100%}
+      .table-wrap table{min-width:0;width:100%;display:block}
+      .table-wrap thead{display:none}
+      .table-wrap tbody{display:block;width:100%}
+      .table-wrap tbody tr{display:block;width:100%;padding:8px 0;border-bottom:1px solid var(--line)}
+      .table-wrap tbody tr:last-child{border-bottom:0}
+      .table-wrap tbody td{
+        display:grid;grid-template-columns:minmax(88px,34%) 1fr;gap:8px;width:100%;padding:7px 2px;
+        border:0;align-items:start;min-width:0;white-space:normal;overflow-wrap:anywhere
+      }
+      .table-wrap tbody td::before{
+        content:attr(data-label);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:600
+      }
+      .table-wrap tbody td.empty{display:block;padding:18px 4px;text-align:center}
+      .table-wrap tbody td.empty::before{display:none}
+      .table-wrap tfoot{display:block;width:100%}
+      .table-wrap tfoot tr,.table-wrap tfoot td{display:block;width:100%}
+      .row-actions{display:flex;flex-wrap:wrap;gap:6px;white-space:normal}
+      .row-actions button{flex:1 1 auto}
+      .form-grid{grid-template-columns:1fr!important;gap:10px}
+      .form-grid .full{grid-column:auto!important}
+      .reserve-row,.purchase-line,.detail-item,.purchase-edit-grid{grid-template-columns:1fr!important}
+      .modal-backdrop{padding:0;align-items:flex-end}
+      .modal,.modal.small{width:100%;max-width:none;max-height:92dvh;border-radius:18px 18px 0 0;padding:16px 14px 22px}
+      .modal-head{position:sticky;top:-16px;z-index:2;background:inherit;padding:12px 0 10px;margin-top:-8px}
+      .client-order-top{flex-direction:column}
+      .toast-wrap{left:10px;right:10px;bottom:10px}
+      .toast{width:100%}
+      input,select,textarea,button{font-size:16px}
+      .small-btn,.secondary,.primary,.danger-btn{min-height:40px}
+    }
+
+    @media(max-width:420px){
+      .kpis{grid-template-columns:1fr!important}
+      .warehouse-tabs{grid-template-columns:1fr}
+      .table-wrap tbody td{grid-template-columns:82px 1fr}
+    }
+
   </style>
 </head>
 <body>
@@ -263,8 +353,9 @@
 
   <div class="app hidden" id="app">
     <header class="appbar">
+      <button class="mobile-menu-toggle" id="mobileMenuToggle" type="button" aria-label="Открыть меню">☰</button>
       <button class="brand brand-home" id="brandHome" type="button">NASTEBEL</button>
-      <nav class="menu-bar">
+      <nav class="menu-bar" id="mobileMenu">
         <button class="settings-link" data-page="dashboard">Главная</button>
         <button class="settings-link" data-page="warehouse">Склад</button>
         <div class="menu-dropdown"><button class="menu-trigger">Продажи</button><div class="menu-popup">
@@ -285,6 +376,7 @@
         <button class="settings-link" data-page="history">История</button>
       </nav>
     </header>
+    <div class="mobile-menu-backdrop" id="mobileMenuBackdrop"></div>
 
     <main class="main">
       <header class="topbar">
@@ -758,11 +850,23 @@ async function loadData(){const d=(await api("load")).data;if(d){state=d;saveCac
 function showApp(){$("loginScreen").classList.add("hidden");$("app").classList.remove("hidden")}function showLogin(){$("loginScreen").classList.remove("hidden");$("app").classList.add("hidden")}
 async function login(){try{const r=await api("login",{password:$("passwordInput").value});sessionToken=r.token;localStorage.setItem("nastebel_crm_session",sessionToken);showApp();await loadData()}catch(e){$("loginError").textContent=e.message;$("loginError").classList.remove("hidden")}}
 const pageMeta={dashboard:["Главная","Общая картина бизнеса на сегодня"],warehouse:["Склад","Общий склад и движения товара"],fresh:["Свежие цветы","Физический склад"],dried:["Сухоцветы","Отдельный склад"],purchases:["Закупки","История закупок"],writeoffs:["Списания","Потери и причины"],orders:["Заказы","Все продажи и поставки"],clients:["Клиенты","Карточки клиентов"],subscriptions:["Подписки","Сроки и поставки"],retail:["Розница","Розничные продажи"],payments:["Оплаты","Все поступления денег по клиентам"],expenses:["Расходы","Операционные расходы"],reports:["Отчёты","Выручка и прибыль"],history:["История","Движение товара и денег"],settings:["Настройки","Конфигурация интерфейса и расчётов"]};
+function closeMobileMenu(){document.body.classList.remove("mobile-menu-open")}
+function toggleMobileMenu(){document.body.classList.toggle("mobile-menu-open")}
+function decorateMobileTables(){
+ document.querySelectorAll(".table-wrap table").forEach(table=>{
+  const headers=[...table.querySelectorAll("thead th")].map(th=>th.textContent.trim());
+  table.querySelectorAll("tbody tr").forEach(tr=>[...tr.children].forEach((td,i)=>{
+   if(td.tagName==="TD"&&!td.classList.contains("empty"))td.dataset.label=headers[i]||"";
+  }));
+ });
+}
 function showPage(name){
  document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
  $("page-"+name).classList.add("active");
  $("pageTitle").textContent=pageMeta[name][0];$("pageSubtitle").textContent=pageMeta[name][1];
  document.querySelectorAll(".menu-dropdown").forEach(x=>x.classList.remove("open"));
+ closeMobileMenu();
+ if(window.innerWidth<=700)window.scrollTo({top:0,behavior:"auto"});
  if(name==="settings")syncSettingsForm();
  if(name==="warehouse"){currentWarehouseView=null;setWarehouseView(null)}
  if(name==="clients"){currentClientFilter=null;renderClients()}
@@ -882,7 +986,7 @@ function render(){
 
  const hist=state.history;$("historyTable").innerHTML=hist.map(h=>'<tr><td>'+new Date(h.event_date).toLocaleString("ru-RU")+'</td><td>'+h.event_type+'</td><td>'+h.description+'</td><td>'+(clientById(h.client_id)?.company_name||"—")+'</td><td>'+(h.amount?rub(h.amount):"—")+'</td></tr>').join("")||'<tr><td colspan="5" class="empty">История пуста</td></tr>';
 
- fillSelects();bindDynamic();if($("page-settings")?.classList.contains("active"))syncSettingsForm();
+ fillSelects();decorateMobileTables();bindDynamic();if($("page-settings")?.classList.contains("active"))syncSettingsForm();
 }
 function fillSelects(){
  fillOrderClients();
@@ -1127,8 +1231,11 @@ function initWarehouseSplitter(){
 }
 document.querySelectorAll("[data-page]").forEach(b=>b.onclick=()=>{showPage(b.dataset.page);if(b.dataset.warehouseOpen)setWarehouseView(b.dataset.warehouseOpen)});
 document.querySelectorAll(".menu-trigger").forEach(b=>b.onclick=e=>{e.stopPropagation();const p=b.parentElement;document.querySelectorAll(".menu-dropdown").forEach(x=>{if(x!==p)x.classList.remove("open")});p.classList.toggle("open")});
-document.addEventListener("click",()=>document.querySelectorAll(".menu-dropdown").forEach(x=>x.classList.remove("open")));document.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>{if(b.dataset.open==="client")resetClientModal();if(b.dataset.open==="order")resetOrderModal();if(b.dataset.open==="purchase")resetPurchaseModal();openModal(b.dataset.open)});document.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeAll);document.querySelectorAll(".modal-backdrop").forEach(m=>m.onclick=e=>{if(e.target===m)closeAll()});
-$("brandHome").onclick=()=>showPage("dashboard");
+$("mobileMenuToggle").onclick=e=>{e.stopPropagation();toggleMobileMenu()};
+$("mobileMenuBackdrop").onclick=closeMobileMenu;
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMobileMenu()});
+document.addEventListener("click",()=>document.querySelectorAll(".menu-dropdown").forEach(x=>x.classList.remove("open")));document.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>{closeMobileMenu();if(b.dataset.open==="client")resetClientModal();if(b.dataset.open==="order")resetOrderModal();if(b.dataset.open==="purchase")resetPurchaseModal();openModal(b.dataset.open)});document.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeAll);document.querySelectorAll(".modal-backdrop").forEach(m=>m.onclick=e=>{if(e.target===m)closeAll()});
+$("brandHome").onclick=()=>{closeMobileMenu();showPage("dashboard")};
 $("openPurchase").onclick=()=>{resetPurchaseModal();openModal("purchase")};
 $("mergePurchasesBtn").onclick=openMergePurchases;
 $("editPurchaseDetails").onclick=editPurchaseDetailsMode;
