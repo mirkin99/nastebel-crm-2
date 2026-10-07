@@ -984,7 +984,7 @@ function setOrderFormLocked(locked){
  ["orderClient","orderModel","orderDate","orderPrice","orderDeliveryNo","orderNote","addReserveRow"].forEach(id=>{if($(id))$(id).disabled=false});
  document.querySelectorAll("#reserveRows input,#reserveRows select,#reserveRows button").forEach(el=>el.disabled=false);
 }
-function editOrder(id){const o=orderById(id);resetOrderModal();$("orderEditId").value=id;$("orderTitle").value=o.title||"";$("orderModel").value=o.sales_channel||(o.subscription_id?"subscription":"one_off");fillOrderClients();$("orderClient").value=o.client_id||"";$("orderDate").value=String(o.delivery_date).slice(0,10);$("orderPrice").value=o.sale_price;$("orderDeliveryNo").value=o.subscription_delivery_no||"";$("orderNote").value=o.note||"";toggleOrderDeliveryField();orderReservations(id).forEach(r=>addReserveRow(r.item_id,r.quantity));$("orderModalTitle").textContent="Редактировать "+orderLabel(o);$("saveOrder").textContent=o.status==="shipped"?"Сохранить и пересчитать":"Сохранить изменения";openModal("order")}
+function editOrder(id){closeModal("clientOrders");const o=orderById(id);resetOrderModal();$("orderEditId").value=id;$("orderTitle").value=o.title||"";$("orderModel").value=o.sales_channel||(o.subscription_id?"subscription":"one_off");fillOrderClients();$("orderClient").value=o.client_id||"";$("orderDate").value=String(o.delivery_date).slice(0,10);$("orderPrice").value=o.sale_price;$("orderDeliveryNo").value=o.subscription_delivery_no||"";$("orderNote").value=o.note||"";toggleOrderDeliveryField();orderReservations(id).forEach(r=>addReserveRow(r.item_id,r.quantity));$("orderModalTitle").textContent="Редактировать "+orderLabel(o);$("saveOrder").textContent=o.status==="shipped"?"Сохранить и пересчитать":"Сохранить изменения";openModal("order")}
 async function deleteOrder(id){askConfirm({title:"Удалить заказ?",text:"Резерв этого заказа будет освобождён. Отгруженные заказы удалить нельзя.",okText:"Удалить",danger:true,onConfirm:()=>mutate("deleteOrder",{id},"Заказ удалён")})}
 function toggleClientFields(){
  const model=$("clientModel").value;
@@ -1086,7 +1086,13 @@ function autofillOrderPrice(){
  if(channel==="subscription"){const s=state.subscriptions.filter(x=>x.client_id===id&&x.status==="active").sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)))[0];if(s)$("orderPrice").value=Number(s.bouquet_price||0)}
  else $("orderPrice").value=Number(c?.default_price||0);
 }
-function orderPayload(){const channel=$("orderModel").value,client_id=$("orderClient").value||null,res=[];document.querySelectorAll("#reserveRows .reserve-row").forEach(row=>{const item_id=row.querySelector(".reserve-item").value,quantity=Number(row.querySelector(".reserve-qty").value);if(item_id&&quantity>0){const x=res.find(r=>r.item_id===item_id);x?x.quantity+=quantity:res.push({item_id,quantity})}});const subscription_id=channel==="subscription"?activeSubscriptionForClient(client_id)?.id||null:null;res.unshift({_meta:{title:$("orderTitle").value.trim(),subscription_delivery_no:channel==="subscription"?Number($("orderDeliveryNo").value||0):null}});return{id:$("orderEditId").value||undefined,client_id,subscription_id,delivery_date:$("orderDate").value||today(),sale_price:Number($("orderPrice").value||0),note:$("orderNote").value.trim(),reservations:res,sales_channel:channel}}
+function orderPayload(){
+ const channel=$("orderModel").value,client_id=$("orderClient").value||null,res=[],editId=$("orderEditId").value||null,existing=editId?orderById(editId):null;
+ document.querySelectorAll("#reserveRows .reserve-row").forEach(row=>{const item_id=row.querySelector(".reserve-item").value,quantity=Number(row.querySelector(".reserve-qty").value);if(item_id&&quantity>0){const x=res.find(r=>r.item_id===item_id);x?x.quantity+=quantity:res.push({item_id,quantity})}});
+ const subscription_id=channel==="subscription"?((existing&&existing.client_id===client_id&&existing.subscription_id)?existing.subscription_id:(activeSubscriptionForClient(client_id)?.id||null)):null;
+ res.unshift({_meta:{title:$("orderTitle").value.trim(),subscription_delivery_no:channel==="subscription"?Number($("orderDeliveryNo").value||0):null}});
+ return{id:editId||undefined,client_id,subscription_id,delivery_date:$("orderDate").value||today(),sale_price:Number($("orderPrice").value||0),note:$("orderNote").value.trim(),reservations:res,sales_channel:channel}
+}
 function openQuickOrder(){
  const clientId=$("purchaseClient").value;if(!clientId)return toast("Сначала выбери клиента.","error");
  const c=clientById(clientId);$("quickOrderTitle").value="";$("quickOrderDate").value=today();
