@@ -864,11 +864,11 @@ function render(){
  $("writeoffTable").innerHTML=state.writeoffs.map(w=>'<tr><td>'+dateRu(w.writeoff_date)+'</td><td>'+(itemById(w.item_id)?.name||"—")+'</td><td>'+w.quantity+'</td><td>'+w.reason+'</td><td>'+rub(w.quantity*w.unit_cost)+'</td><td><button class="small-btn" data-item-purchases="'+w.item_id+'">Перейти к закупке</button></td><td><div class="row-actions"><button class="small-btn" data-edit-writeoff="'+w.id+'">Изменить</button><button class="danger-btn" data-delete-writeoff="'+w.id+'">Удалить</button></div></td></tr>').join("")||'<tr><td colspan="7" class="empty">Списаний нет</td></tr>';
 
  const visibleOrders=state.orders.filter(o=>currentOrderFilter==="all"||o.status===currentOrderFilter);
- $("ordersTable").innerHTML=visibleOrders.map(o=>'<tr><td><strong>'+orderLabel(o)+'</strong><div class="card-desc">#'+o.order_no+'</div></td><td>'+(clientById(o.client_id)?.company_name||(o.sales_channel==="retail"?"Розница":"—"))+'</td><td>'+subscriptionDeliveryLabel(o)+'</td><td>'+dateRu(o.delivery_date)+'</td><td>'+channelLabel(o)+'</td><td>'+rub(o.sale_price)+'</td><td>'+rub(orderCogs(o))+'</td><td>'+(o.status==="shipped"?rub(Number(o.sale_price)-orderCogs(o)-orderExpenses(o.id)):"—")+'</td><td>'+badgeStatus(o.status)+'</td><td><div class="row-actions">'+(o.status!=="shipped"?'<button class="small-btn" data-edit-order="'+o.id+'">Изменить</button>'+(o.status==="reserved"?'<button class="small-btn" data-ship="'+o.id+'">Подтвердить отгрузку</button>':'')+'<button class="danger-btn" data-delete-order="'+o.id+'">Удалить</button>':'')+'</div></td></tr>').join("")||'<tr><td colspan="10" class="empty">Заказов нет</td></tr>';
+ $("ordersTable").innerHTML=visibleOrders.map(o=>'<tr><td><strong>'+orderLabel(o)+'</strong><div class="card-desc">#'+o.order_no+'</div></td><td>'+(clientById(o.client_id)?.company_name||(o.sales_channel==="retail"?"Розница":"—"))+'</td><td>'+subscriptionDeliveryLabel(o)+'</td><td>'+dateRu(o.delivery_date)+'</td><td>'+channelLabel(o)+'</td><td>'+rub(o.sale_price)+'</td><td>'+rub(orderCogs(o))+'</td><td>'+(o.status==="shipped"?rub(Number(o.sale_price)-orderCogs(o)-orderExpenses(o.id)):"—")+'</td><td>'+badgeStatus(o.status)+'</td><td><div class="row-actions"><button class="small-btn" data-edit-order="'+o.id+'">Изменить</button>'+(o.status==="reserved"?'<button class="small-btn" data-ship="'+o.id+'">Подтвердить отгрузку</button>':'')+(o.status!=="shipped"?'<button class="danger-btn" data-delete-order="'+o.id+'">Удалить</button>':'')+'</div></td></tr>').join("")||'<tr><td colspan="10" class="empty">Заказов нет</td></tr>';
 
  renderClients();
 
- $("retailTable").innerHTML=state.orders.filter(o=>o.sales_channel==="retail").map(o=>'<tr><td>'+orderLabel(o)+'</td><td>'+dateRu(o.delivery_date)+'</td><td>'+rub(o.sale_price)+'</td><td>'+rub(orderCogs(o))+'</td><td>'+(o.status==="shipped"?rub(Number(o.sale_price)-orderCogs(o)-orderExpenses(o.id)):"—")+'</td><td>'+badgeStatus(o.status)+'</td><td><div class="row-actions">'+(o.status!=="shipped"?'<button class="small-btn" data-edit-order="'+o.id+'">Изменить</button><button class="danger-btn" data-delete-order="'+o.id+'">Удалить</button>':'')+'</div></td></tr>').join("")||'<tr><td colspan="7" class="empty">Розничных продаж пока нет</td></tr>';
+ $("retailTable").innerHTML=state.orders.filter(o=>o.sales_channel==="retail").map(o=>'<tr><td>'+orderLabel(o)+'</td><td>'+dateRu(o.delivery_date)+'</td><td>'+rub(o.sale_price)+'</td><td>'+rub(orderCogs(o))+'</td><td>'+(o.status==="shipped"?rub(Number(o.sale_price)-orderCogs(o)-orderExpenses(o.id)):"—")+'</td><td>'+badgeStatus(o.status)+'</td><td><div class="row-actions"><button class="small-btn" data-edit-order="'+o.id+'">Изменить</button>'+(o.status!=="shipped"?'<button class="danger-btn" data-delete-order="'+o.id+'">Удалить</button>':'')+'</div></td></tr>').join("")||'<tr><td colspan="7" class="empty">Розничных продаж пока нет</td></tr>';
 
  $("subscriptionsTable").innerHTML=state.subscriptions.map(s=>{const c=clientById(s.client_id),st=subscriptionStats(s);return '<tr><td><strong>'+(c?.company_name||"—")+'</strong></td><td>'+dateRu(s.start_date)+' · '+s.months+' мес.</td><td>'+st.shipped+' из '+st.total+'</td><td>'+rub(s.bouquet_price)+'</td><td>'+rub(state.payments.filter(p=>p.subscription_id===s.id).reduce((a,p)=>a+Number(p.amount),0))+'</td><td><div class="progress-row">'+st.pct+'%<div class="progress"><span style="width:'+st.pct+'%"></span></div></div></td><td><span class="badge">'+s.status+'</span></td></tr>'}).join("")||'<tr><td colspan="7" class="empty">Подписок нет</td></tr>';
 
@@ -919,6 +919,7 @@ function bindDynamic(){
  document.querySelectorAll("[data-edit-client]").forEach(b=>b.onclick=()=>editClient(b.dataset.editClient));
  document.querySelectorAll("[data-open-client]").forEach(b=>b.onclick=()=>editClient(b.dataset.openClient));
  document.querySelectorAll("[data-delete-client]").forEach(b=>b.onclick=()=>deleteClient(b.dataset.deleteClient));
+ document.querySelectorAll("[data-client-orders]").forEach(b=>b.onclick=()=>openClientOrders(b.dataset.clientOrders));
  document.querySelectorAll("[data-edit-order]").forEach(b=>b.onclick=()=>editOrder(b.dataset.editOrder));
  document.querySelectorAll("[data-delete-order]").forEach(b=>b.onclick=()=>deleteOrder(b.dataset.deleteOrder));
  document.querySelectorAll("[data-edit-payment]").forEach(b=>b.onclick=()=>editPayment(b.dataset.editPayment));
@@ -1119,6 +1120,10 @@ document.querySelectorAll(".menu-trigger").forEach(b=>b.onclick=e=>{e.stopPropag
 document.addEventListener("click",()=>document.querySelectorAll(".menu-dropdown").forEach(x=>x.classList.remove("open")));document.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>{if(b.dataset.open==="client")resetClientModal();if(b.dataset.open==="order")resetOrderModal();if(b.dataset.open==="purchase")resetPurchaseModal();openModal(b.dataset.open)});document.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeAll);document.querySelectorAll(".modal-backdrop").forEach(m=>m.onclick=e=>{if(e.target===m)closeAll()});
 $("brandHome").onclick=()=>showPage("dashboard");
 $("openPurchase").onclick=()=>{resetPurchaseModal();openModal("purchase")};
+$("mergePurchasesBtn").onclick=openMergePurchases;
+$("editPurchaseDetails").onclick=editPurchaseDetailsMode;
+$("savePurchaseDetails").onclick=savePurchaseDetailsChanges;
+$("saveMergePurchases").onclick=saveMergedPurchases;
 $("addPurchaseRow").onclick=()=>addPurchaseRow();
 $("purchaseClient").onchange=()=>fillPurchaseOrders();
 $("quickOrderBtn").onclick=openQuickOrder;
