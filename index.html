@@ -980,10 +980,10 @@ function editClient(id){
 }
 async function deleteClient(id){const c=clientById(id);askConfirm({title:"Удалить клиента?",text:"«"+(c?.company_name||"Клиент")+"» исчезнет из рабочего списка, но оплаты и история останутся в отчётах. Если есть незавершённый заказ, CRM покажет его номер.",okText:"Удалить из списка",danger:true,onConfirm:()=>mutate("deleteClient",{id},"Клиент удалён из рабочего списка")})}
 function setOrderFormLocked(locked){
- ["orderClient","orderModel","orderDate","orderPrice","orderDeliveryNo","orderNote","addReserveRow"].forEach(id=>{if($(id))$(id).disabled=locked});
- document.querySelectorAll("#reserveRows input,#reserveRows select,#reserveRows button").forEach(el=>el.disabled=locked);
+ ["orderClient","orderModel","orderDate","orderPrice","orderDeliveryNo","orderNote","addReserveRow"].forEach(id=>{if($(id))$(id).disabled=false});
+ document.querySelectorAll("#reserveRows input,#reserveRows select,#reserveRows button").forEach(el=>el.disabled=false);
 }
-function editOrder(id){const o=orderById(id);resetOrderModal();$("orderEditId").value=id;$("orderTitle").value=o.title||"";$("orderModel").value=o.sales_channel||(o.subscription_id?"subscription":"one_off");fillOrderClients();$("orderClient").value=o.client_id||"";$("orderDate").value=String(o.delivery_date).slice(0,10);$("orderPrice").value=o.sale_price;$("orderDeliveryNo").value=o.subscription_delivery_no||"";$("orderNote").value=o.note||"";toggleOrderDeliveryField();orderReservations(id).forEach(r=>addReserveRow(r.item_id,r.quantity));const shipped=o.status==="shipped";setOrderFormLocked(shipped);$("orderModalTitle").textContent=(shipped?"Переименовать ":"Редактировать ")+orderLabel(o);$("saveOrder").textContent=shipped?"Сохранить название":"Сохранить изменения";openModal("order")}
+function editOrder(id){const o=orderById(id);resetOrderModal();$("orderEditId").value=id;$("orderTitle").value=o.title||"";$("orderModel").value=o.sales_channel||(o.subscription_id?"subscription":"one_off");fillOrderClients();$("orderClient").value=o.client_id||"";$("orderDate").value=String(o.delivery_date).slice(0,10);$("orderPrice").value=o.sale_price;$("orderDeliveryNo").value=o.subscription_delivery_no||"";$("orderNote").value=o.note||"";toggleOrderDeliveryField();orderReservations(id).forEach(r=>addReserveRow(r.item_id,r.quantity));$("orderModalTitle").textContent="Редактировать "+orderLabel(o);$("saveOrder").textContent=o.status==="shipped"?"Сохранить и пересчитать":"Сохранить изменения";openModal("order")}
 async function deleteOrder(id){askConfirm({title:"Удалить заказ?",text:"Резерв этого заказа будет освобождён. Отгруженные заказы удалить нельзя.",okText:"Удалить",danger:true,onConfirm:()=>mutate("deleteOrder",{id},"Заказ удалён")})}
 function toggleClientFields(){
  const model=$("clientModel").value;
@@ -1013,7 +1013,65 @@ function resetPurchaseModal(){$("purchaseTitle").value="";$("purchaseDate").valu
 function addPurchaseRow(data={}){const row=document.createElement("div");row.className="purchase-line";row.innerHTML='<div><label>Склад</label><select class="field-select purchase-category"><option value="fresh">Свежие</option><option value="dried">Сухоцветы</option></select></div><div><label>Позиция</label><input class="field purchase-name" list="flowerList" placeholder="Хризантема"></div><div><label>Цвет</label><input class="field purchase-color" placeholder="Белый"></div><div><label>Кол-во</label><input class="field purchase-qty" type="number" min="1" value="1"></div><div><label>Цена / шт.</label><input class="field purchase-cost" type="number" min="0" step="0.01" value="0"></div><button class="danger-btn" type="button">×</button>';row.querySelector(".purchase-category").value=data.category||"fresh";row.querySelector(".purchase-name").value=data.name||"";row.querySelector(".purchase-color").value=data.color||"";row.querySelector(".purchase-qty").value=data.quantity||1;row.querySelector(".purchase-cost").value=data.unit_cost||0;row.querySelector(".danger-btn").onclick=()=>{if($("purchaseRows").children.length>1)row.remove();updatePurchaseTotal()};row.querySelectorAll("input,select").forEach(el=>el.addEventListener("input",updatePurchaseTotal));$("purchaseRows").appendChild(row);updatePurchaseTotal()}
 function purchaseItemsPayload(){return[...document.querySelectorAll("#purchaseRows .purchase-line")].map(row=>({category:row.querySelector(".purchase-category").value,name:row.querySelector(".purchase-name").value.trim(),color:row.querySelector(".purchase-color").value.trim()||"Без цвета",quantity:Number(row.querySelector(".purchase-qty").value),unit_cost:Number(row.querySelector(".purchase-cost").value)})).filter(x=>x.name&&x.quantity>0&&x.unit_cost>=0)}
 function updatePurchaseTotal(){const total=[...document.querySelectorAll("#purchaseRows .purchase-line")].reduce((s,row)=>s+Number(row.querySelector(".purchase-qty").value||0)*Number(row.querySelector(".purchase-cost").value||0),0);$("purchaseTotal").textContent="Итого: "+rub(total)}
-function viewPurchase(id){const p=state.purchases.find(x=>x.id===id);if(!p)return;const lines=state.purchaseItems.filter(pi=>pi.purchase_id===id),o=p.target_order_id?orderById(p.target_order_id):null,c=clientById(p.target_client_id||o?.client_id);$("purchaseDetailsTitle").textContent=p.title||"Закупка";$("purchaseDetailsMeta").textContent=dateRu(p.purchase_date)+" · "+(p.supplier||"без поставщика")+" · "+(c?c.company_name:"общий склад")+(o?" · "+orderLabel(o):"")+(p.note?" · "+p.note:"");$("purchaseDetailsBody").innerHTML=lines.map(pi=>{const i=itemById(pi.item_id);return'<div class="detail-item"><strong>'+(i?.name||"Позиция")+'</strong><span>'+(i?.color||"—")+'</span><span>'+pi.quantity+' шт.</span><strong>'+rub(pi.unit_cost)+'/шт.</strong></div>'}).join("")+'<div style="padding-top:10px"><strong>Итого: '+rub(lines.reduce((s,pi)=>s+Number(pi.quantity)*Number(pi.unit_cost),0))+'</strong></div>';openModal("purchaseDetails")}
+function purchaseDetailsView(id,editing=false){
+ const p=state.purchases.find(x=>x.id===id);if(!p)return;
+ const lines=state.purchaseItems.filter(pi=>pi.purchase_id===id),o=p.target_order_id?orderById(p.target_order_id):null,c=clientById(p.target_client_id||o?.client_id);
+ $("purchaseDetailsId").value=id;
+ $("purchaseDetailsTitle").textContent=p.title||"Закупка";
+ $("purchaseDetailsMeta").textContent=dateRu(p.purchase_date)+" · "+(p.supplier||"без поставщика")+" · "+(c?c.company_name:"общий склад")+(o?" · "+orderLabel(o):"")+(p.note?" · "+p.note:"");
+ if(editing){
+  $("purchaseDetailsBody").innerHTML=lines.map(pi=>{const i=itemById(pi.item_id);return '<div class="purchase-edit-grid" data-purchase-edit-item="'+pi.item_id+'"><div><strong>'+(i?.name||"Позиция")+'</strong><div class="card-desc">'+(i?.color||"—")+'</div></div><div class="card-desc">'+(i?.category==="fresh"?"Свежие":"Сухоцветы")+'</div><div><label>Количество</label><input class="field purchase-detail-qty" type="number" min="1" value="'+pi.quantity+'"></div><div><label>Цена / шт.</label><input class="field purchase-detail-cost" type="number" min="0" step="0.01" value="'+Number(pi.unit_cost)+'"></div></div>'}).join("");
+  $("editPurchaseDetails").classList.add("hidden");$("savePurchaseDetails").classList.remove("hidden");
+ }else{
+  $("purchaseDetailsBody").innerHTML=lines.map(pi=>{const i=itemById(pi.item_id);return'<div class="detail-item"><strong>'+(i?.name||"Позиция")+'</strong><span>'+(i?.color||"—")+'</span><span>'+pi.quantity+' шт.</span><strong>'+rub(pi.unit_cost)+'/шт.</strong></div>'}).join("")+'<div style="padding-top:10px"><strong>Итого: '+rub(lines.reduce((s,pi)=>s+Number(pi.quantity)*Number(pi.unit_cost),0))+'</strong></div>';
+  $("editPurchaseDetails").classList.remove("hidden");$("savePurchaseDetails").classList.add("hidden");
+ }
+}
+function viewPurchase(id){purchaseDetailsView(id,false);openModal("purchaseDetails")}
+function editPurchaseDetailsMode(){const id=$("purchaseDetailsId").value;if(id)purchaseDetailsView(id,true)}
+async function savePurchaseDetailsChanges(){
+ const id=$("purchaseDetailsId").value,p=state.purchases.find(x=>x.id===id);if(!p)return;
+ const items=[...document.querySelectorAll("[data-purchase-edit-item]")].map(row=>({
+  item_id:row.dataset.purchaseEditItem,
+  quantity:Number(row.querySelector(".purchase-detail-qty").value),
+  unit_cost:Number(row.querySelector(".purchase-detail-cost").value)
+ }));
+ if(items.some(x=>!x.item_id||x.quantity<=0||x.unit_cost<0))return toast("Проверь количество и цену.","error");
+ items.unshift({_meta:{edit_purchase_id:id,target_client_id:p.target_client_id||null}});
+ try{
+  const r=await api("createPurchase",{payload:{title:p.title||"",purchase_date:p.purchase_date,supplier:p.supplier||"",target_order_id:p.target_order_id||null,note:p.note||"",items}});
+  if(r.data){state=r.data;saveCache();render()}
+  purchaseDetailsView(id,false);toast("Закупка пересчитана");
+ }catch(e){toast(e.message,"error")}
+}
+function openMergePurchases(){
+ $("mergePurchaseTitle").value="";$("mergePurchaseSupplier").value="";
+ $("mergePurchasesList").innerHTML=state.purchases.map(p=>{const lines=state.purchaseItems.filter(pi=>pi.purchase_id===p.id),sum=lines.reduce((s,x)=>s+Number(x.quantity)*Number(x.unit_cost),0);return '<label class="merge-row"><input type="checkbox" data-merge-purchase="'+p.id+'"><span><strong>'+(p.title||"Закупка")+'</strong><div class="card-desc">'+dateRu(p.purchase_date)+' · '+lines.length+' поз. · '+rub(sum)+'</div></span></label>'}).join("")||'<div class="empty">Закупок нет</div>';
+ openModal("mergePurchases");
+}
+async function saveMergedPurchases(){
+ const ids=[...document.querySelectorAll("[data-merge-purchase]:checked")].map(x=>x.dataset.mergePurchase);
+ if(ids.length<2)return toast("Выбери минимум две закупки.","error");
+ const title=$("mergePurchaseTitle").value.trim(),supplier=$("mergePurchaseSupplier").value.trim();
+ if(!title)return toast("Укажи название объединённой закупки.","error");
+ const items=[{_meta:{merge_purchase_ids:ids}}];
+ await mutate("createPurchase",{payload:{title,purchase_date:today(),supplier,target_order_id:null,note:"",items}},"Закупки объединены");
+}
+function openClientOrders(clientId){
+ const c=clientById(clientId);if(!c)return;
+ $("clientOrdersTitle").textContent="Заказы · "+c.company_name;
+ const os=state.orders.filter(o=>o.client_id===clientId).sort((x,y)=>String(y.delivery_date||y.created_at).localeCompare(String(x.delivery_date||x.created_at)));
+ $("clientOrdersBody").innerHTML=os.map(o=>{
+  const composition=orderReservations(o.id),cogs=orderCogs(o),expenses=orderExpenses(o.id),profit=Number(o.sale_price||0)-cogs-expenses;
+  const directPurchases=state.purchases.filter(p=>p.target_order_id===o.id);
+  const purchaseText=directPurchases.map(p=>{const total=state.purchaseItems.filter(pi=>pi.purchase_id===p.id).reduce((s,pi)=>s+Number(pi.quantity)*Number(pi.unit_cost),0);return 'Купили '+dateRu(p.purchase_date)+(p.supplier?' у '+p.supplier:'')+' на '+rub(total)}).join("<br>");
+  const transfers=state.history.filter(x=>x.event_type==="Перенос резерва"&&x.meta?.to_order===o.id).map(x=>{const from=orderById(x.meta?.from_order),it=itemById(x.meta?.item_id);return 'Получено из «'+orderLabel(from)+'»: '+(it?.name||"позиция")+' × '+Number(x.meta?.quantity||0)}).join("<br>");
+  const comp=composition.length?composition.map(r=>{const i=itemById(r.item_id);return (i?.name||"Позиция")+' · '+(i?.color||"")+' × '+r.quantity}).join(", "):"Состав пока не указан";
+  const source=purchaseText||transfers||(composition.length?"Использован свободный остаток склада":"Источник пока не определён");
+  return '<div class="client-order-card"><div class="client-order-top"><div><strong>'+orderLabel(o)+'</strong><div class="card-desc">'+dateRu(o.delivery_date)+' · '+channelLabel(o)+' · '+subscriptionDeliveryLabel(o)+'</div></div>'+badgeStatus(o.status)+'</div><div class="order-chain"><div><strong>Источник:</strong> '+source+'</div><div><strong>Состав букета:</strong> '+comp+'</div><div><strong>Продали:</strong> '+rub(o.sale_price)+' · <strong>себестоимость:</strong> '+rub(cogs)+' · <strong>расходы:</strong> '+rub(expenses)+'</div><div><strong>'+(o.status==="shipped"?"Прибыль":"Плановая прибыль")+':</strong> '+rub(profit)+'</div></div><div class="row-actions" style="margin-top:12px"><button class="small-btn" data-edit-order="'+o.id+'">Изменить заказ</button></div></div>';
+ }).join("")||'<div class="empty">У клиента пока нет заказов</div>';
+ openModal("clientOrders");bindDynamic();
+}
 function duplicatePurchase(id){const p=state.purchases.find(x=>x.id===id);if(!p)return toast("Закупка не найдена.","error");resetPurchaseModal();$("purchaseTitle").value=(p.title||"Закупка")+" — копия";$("purchaseSupplier").value=p.supplier||"";$("purchaseNote").value=p.note||"";$("purchaseClient").value=p.target_client_id||orderById(p.target_order_id)?.client_id||"";fillPurchaseOrders();$("purchaseRows").innerHTML="";state.purchaseItems.filter(pi=>pi.purchase_id===id).forEach(pi=>{const i=itemById(pi.item_id);addPurchaseRow({category:i?.category||"fresh",name:i?.name||"",color:i?.color||"",quantity:pi.quantity,unit_cost:pi.unit_cost})});openModal("purchase")}
 async function deletePurchase(id){askConfirm({title:"Удалить закупку навсегда?",text:"Закупка полностью исчезнет из списка и истории, а её количество будет вычтено из текущего склада.",okText:"Удалить навсегда",danger:true,onConfirm:()=>mutate("deletePurchase",{id},"Закупка удалена")})}
 function openTransfer(orderId){const res=orderReservations(orderId);if(!res.length)return toast("В заказе нет резерва.","error");$("transferFromOrder").value=orderId;$("transferItem").innerHTML=res.map(r=>'<option value="'+r.item_id+'">'+(itemById(r.item_id)?.name||"Позиция")+' · '+(itemById(r.item_id)?.color||"")+' · '+r.quantity+' шт.</option>').join("");$("transferQty").value=1;$("transferToOrder").innerHTML=state.orders.filter(o=>o.id!==orderId&&["draft","reserved"].includes(o.status)).map(o=>'<option value="'+o.id+'">#'+o.order_no+' · '+(clientById(o.client_id)?.company_name||"Розница")+'</option>').join("");openModal("transfer")}
