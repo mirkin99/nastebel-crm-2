@@ -984,17 +984,61 @@ function autofillOrderPrice(){
  else $("orderPrice").value=Number(c?.default_price||0);
 }
 function orderPayload(){const channel=$("orderModel").value,client_id=$("orderClient").value||null,res=[];document.querySelectorAll("#reserveRows .reserve-row").forEach(row=>{const item_id=row.querySelector(".reserve-item").value,quantity=Number(row.querySelector(".reserve-qty").value);if(item_id&&quantity>0){const x=res.find(r=>r.item_id===item_id);x?x.quantity+=quantity:res.push({item_id,quantity})}});const subscription_id=channel==="subscription"?activeSubscriptionForClient(client_id)?.id||null:null;res.unshift({_meta:{title:$("orderTitle").value.trim(),subscription_delivery_no:channel==="subscription"?Number($("orderDeliveryNo").value||0):null}});return{id:$("orderEditId").value||undefined,client_id,subscription_id,delivery_date:$("orderDate").value||today(),sale_price:Number($("orderPrice").value||0),note:$("orderNote").value.trim(),reservations:res,sales_channel:channel}}
+function openQuickOrder(){
+ const clientId=$("purchaseClient").value;if(!clientId)return toast("Сначала выбери клиента.","error");
+ const c=clientById(clientId);$("quickOrderTitle").value="";$("quickOrderDate").value=today();
+ const model=c?.work_model==="subscription"?"subscription":c?.work_model==="retail"?"retail":"one_off";
+ $("quickOrderModel").value=model;$("quickOrderPrice").value=model==="subscription"?Number(activeSubscriptionForClient(clientId)?.bouquet_price||0):Number(c?.default_price||0);$("quickDeliveryNo").value="";toggleQuickDelivery();openModal("quickOrder");
+}
+async function saveQuickOrder(){
+ const clientId=$("purchaseClient").value,channel=$("quickOrderModel").value,title=$("quickOrderTitle").value.trim(),deliveryNo=Number($("quickDeliveryNo").value||0);
+ if(!clientId)return toast("Клиент не выбран.","error");
+ if(channel==="subscription"&&deliveryNo<=0)return toast("Укажи номер поставки по подписке.","error");
+ const sub=channel==="subscription"?activeSubscriptionForClient(clientId):null;
+ if(channel==="subscription"&&!sub)return toast("У клиента нет активной подписки.","error");
+ const payload={client_id:clientId,subscription_id:sub?.id||null,delivery_date:$("quickOrderDate").value||today(),sale_price:Number($("quickOrderPrice").value||0),note:"",sales_channel:channel,reservations:[{_meta:{title,subscription_delivery_no:channel==="subscription"?deliveryNo:null}}]};
+ try{
+  const r=await api("createOrder",{payload});
+  if(r.data){state=r.data;saveCache();render()}
+  const newId=r.result||state.orders.filter(o=>o.client_id===clientId&&o.status==="draft").sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)))[0]?.id;
+  closeModal("quickOrder");$("purchaseClient").value=clientId;fillPurchaseOrders(newId);toast("Заказ создан и выбран для закупки");
+ }catch(e){toast(e.message,"error")}
+}
+function initWarehouseSplitter(){
+ const splitter=$("warehouseSplitter"),left=$("freshWarehousePanel"),wrap=$("warehouseSummary");if(!splitter||!left||!wrap)return;
+ const saved=Number(localStorage.getItem("nastebel_warehouse_split")||50);left.style.flexBasis=Math.min(75,Math.max(25,saved))+"%";
+ let dragging=false;
+ splitter.addEventListener("mousedown",e=>{dragging=true;document.body.style.userSelect="none";e.preventDefault()});
+ document.addEventListener("mousemove",e=>{if(!dragging||window.innerWidth<=900)return;const r=wrap.getBoundingClientRect(),pct=(e.clientX-r.left)/r.width*100,clamped=Math.min(75,Math.max(25,pct));left.style.flexBasis=clamped+"%";localStorage.setItem("nastebel_warehouse_split",String(clamped))});
+ document.addEventListener("mouseup",()=>{if(dragging){dragging=false;document.body.style.userSelect=""}});
+}
 document.querySelectorAll("[data-page]").forEach(b=>b.onclick=()=>{showPage(b.dataset.page);if(b.dataset.warehouseOpen)setWarehouseView(b.dataset.warehouseOpen)});
 document.querySelectorAll(".menu-trigger").forEach(b=>b.onclick=e=>{e.stopPropagation();const p=b.parentElement;document.querySelectorAll(".menu-dropdown").forEach(x=>{if(x!==p)x.classList.remove("open")});p.classList.toggle("open")});
 document.addEventListener("click",()=>document.querySelectorAll(".menu-dropdown").forEach(x=>x.classList.remove("open")));document.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>{if(b.dataset.open==="client")resetClientModal();if(b.dataset.open==="order")resetOrderModal();if(b.dataset.open==="purchase")resetPurchaseModal();openModal(b.dataset.open)});document.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeAll);document.querySelectorAll(".modal-backdrop").forEach(m=>m.onclick=e=>{if(e.target===m)closeAll()});
-$("openPurchase").onclick=()=>{resetPurchaseModal();openModal("purchase")};$("addPurchaseRow").onclick=()=>addPurchaseRow();$("saveTransfer").onclick=async()=>{const p={from_order:$("transferFromOrder").value,to_order:$("transferToOrder").value,item_id:$("transferItem").value,quantity:Number($("transferQty").value)};if(!p.to_order||p.quantity<=0)return toast("Выбери заказ и количество.","error");await mutate("transferReservation",{payload:p},"Цветы перенесены")};$("loginBtn").onclick=login;$("passwordInput").onkeydown=e=>{if(e.key==="Enter")login()};$("clientModel").onchange=toggleClientFields;$("orderModel").onchange=()=>{fillOrderClients();$("orderPrice").value=""};$("orderClient").onchange=autofillOrderPrice;$("addReserveRow").onclick=()=>addReserveRow();$("openPayment").onclick=()=>{resetPaymentModal();openModal("payment")};$("openExpense").onclick=()=>{resetExpenseModal();openModal("expense")};$("openWriteoff").onclick=()=>{resetWriteoffModal();$("writeoffDate").value=today();openModal("writeoff")};document.querySelectorAll(".client-tab").forEach(b=>b.onclick=()=>{currentClientFilter=b.dataset.clientFilter;render()});document.querySelectorAll(".order-tab").forEach(b=>b.onclick=()=>{currentOrderFilter=b.dataset.orderFilter;document.querySelectorAll(".order-tab").forEach(x=>x.classList.toggle("active",x===b));render()});
+$("brandHome").onclick=()=>showPage("dashboard");
+$("openPurchase").onclick=()=>{resetPurchaseModal();openModal("purchase")};
+$("addPurchaseRow").onclick=()=>addPurchaseRow();
+$("purchaseClient").onchange=()=>fillPurchaseOrders();
+$("quickOrderBtn").onclick=openQuickOrder;
+$("quickOrderModel").onchange=toggleQuickDelivery;
+$("saveQuickOrder").onclick=saveQuickOrder;
+$("saveTransfer").onclick=async()=>{const p={from_order:$("transferFromOrder").value,to_order:$("transferToOrder").value,item_id:$("transferItem").value,quantity:Number($("transferQty").value)};if(!p.to_order||p.quantity<=0)return toast("Выбери заказ и количество.","error");await mutate("transferReservation",{payload:p},"Цветы перенесены")};
+$("loginBtn").onclick=login;$("passwordInput").onkeydown=e=>{if(e.key==="Enter")login()};
+$("clientModel").onchange=toggleClientFields;
+$("orderModel").onchange=()=>{fillOrderClients();$("orderPrice").value="";$("orderDeliveryNo").value="";toggleOrderDeliveryField();autofillOrderPrice()};
+$("orderClient").onchange=()=>{autofillOrderPrice();toggleOrderDeliveryField()};
+$("addReserveRow").onclick=()=>addReserveRow();
+$("openPayment").onclick=()=>{resetPaymentModal();openModal("payment")};
+$("openExpense").onclick=()=>{resetExpenseModal();openModal("expense")};
+$("openWriteoff").onclick=()=>{resetWriteoffModal();$("writeoffDate").value=today();openModal("writeoff")};
+document.querySelectorAll(".client-tab").forEach(b=>b.onclick=()=>{currentClientFilter=b.dataset.clientFilter;render()});document.querySelectorAll(".order-tab").forEach(b=>b.onclick=()=>{currentOrderFilter=b.dataset.orderFilter;document.querySelectorAll(".order-tab").forEach(x=>x.classList.toggle("active",x===b));render()});
 function applyTheme(){
  const light=localStorage.getItem("nastebel_theme")==="light";
  document.body.classList.toggle("light",light);
  if($("themeToggle"))$("themeToggle").textContent=light?"☾ Тёмная тема":"☀ Светлая тема";
 }
 $("themeToggle").onclick=()=>{localStorage.setItem("nastebel_theme",document.body.classList.contains("light")?"dark":"light");applyTheme()};
-applyTheme()
+applyTheme();initWarehouseSplitter();
 function setWarehouseView(v){
  currentWarehouseView=v||null;
  document.querySelectorAll(".warehouse-tab").forEach(x=>x.classList.toggle("active",!!v&&x.dataset.warehouseView===v));
@@ -1004,7 +1048,7 @@ function setWarehouseView(v){
  else{const source=$("page-"+v),target=$("warehouse-"+v);if(!target.children.length)target.append(...Array.from(source.children));target.classList.remove("hidden")}
 }
 document.querySelectorAll(".warehouse-tab").forEach(b=>b.onclick=()=>setWarehouseView(b.dataset.warehouseView));
-$("newRetailOrder").onclick=()=>{resetOrderModal();$("orderModel").value="retail";$("orderClient").value="";openModal("order")};
+$("newRetailOrder").onclick=()=>{resetOrderModal();$("orderModel").value="retail";fillOrderClients();$("orderClient").value="";toggleOrderDeliveryField();openModal("order")};
 function syncSettingsForm(){if(!$("showMarkup"))return;const [a,b]=periodBounds();$("showMarkup").checked=!!state.settings?.show_markup;$("markupMultiplier").value=Number(state.settings?.markup_multiplier||2.5);$("reportStart").value=a;$("reportEnd").value=b}
 $("saveSettings").onclick=async()=>{const mult=Number($("markupMultiplier").value),a=$("reportStart").value,b=$("reportEnd").value;if(!Number.isFinite(mult)||mult<=0)return toast("Укажи корректный коэффициент.","error");if(!a||!b||a>b)return toast("Проверь период отчётности.","error");await mutate("updateSettings",{payload:{show_markup:$("showMarkup").checked,markup_multiplier:mult,report_start:a,report_end:b}},"Настройки сохранены");syncSettingsForm()};$("currentMonthBtn").onclick=()=>{const [a,b]=currentMonthBounds();$("reportStart").value=a;$("reportEnd").value=b};
 $("saveClient").onclick=async()=>{
