@@ -843,11 +843,15 @@ function renderClients(){
 function render(){
  const [periodStart,periodEnd]=periodBounds(),pb=paymentBreakdown();
  $("dashboardPeriod").textContent="Период: "+dateRu(periodStart)+" — "+dateRu(periodEnd);
- const k=[["Стоимость склада",rub(inventoryValue()),"Текущий физический остаток"],["В резерве",activeInventory().reduce((s,i)=>s+reservedQty(i.id),0)+" шт.","Под заказы"],["Получено оплат",rub(totalPaid()),"За выбранный период"],["Заработано",rub(earnedRevenue()),"Отгрузки за период"],["Затраты",rub(cashCosts()),"Закупки + расходы"],["Списания",rub(writeoffValue()),"За период"],["Прибыль",rub(totalProfit()),"За выбранный период"]];
- const targets=["warehouse","orders","payments","reports","expenses","writeoffs","reports"];
+ const activeReserveRows=state.reservations.filter(r=>orderById(r.order_id)?.status==="reserved");
+ const reserveQtyTotal=activeReserveRows.reduce((s,r)=>s+Number(r.quantity||0),0);
+ const reserveValueTotal=activeReserveRows.reduce((s,r)=>s+Number(r.quantity||0)*Number(r.unit_cost||0),0);
+ const warehouseNote='Текущий физический остаток<br><span style="color:var(--muted)">в том числе резерв: '+reserveQtyTotal+' шт. · '+rub(reserveValueTotal)+'</span>';
+ const k=[["Стоимость склада",rub(inventoryValue()),warehouseNote],["Получено оплат",rub(totalPaid()),"За выбранный период"],["Заработано",rub(earnedRevenue()),"Отгрузки за период"],["Затраты",rub(cashCosts()),"Закупки + расходы"],["Списания",rub(writeoffValue()),"За период"],["Прибыль",rub(totalProfit()),"За выбранный период"]];
+ const targets=["warehouse","payments","reports","expenses","writeoffs","reports"];
  const tooltip='<div class="kpi-tooltip"><div class="tooltip-row"><span>Подписки</span><strong>'+rub(pb.subscription)+'</strong></div><div class="tooltip-row"><span>Долговечные</span><strong>'+rub(pb.durable)+'</strong></div><div class="tooltip-row"><span>Розница</span><strong>'+rub(pb.retail)+'</strong></div><div class="tooltip-period">'+dateRu(periodStart)+' — '+dateRu(periodEnd)+'</div></div>';
- $("kpiGrid").innerHTML=k.map((x,i)=>'<button class="kpi kpi-link '+(i===2?"has-tooltip":"")+'" data-kpi-target="'+targets[i]+'"><div class="kpi-label">'+x[0]+'</div><div class="kpi-value">'+x[1]+'</div><div class="kpi-note">'+x[2]+'</div>'+(i===2?tooltip:"")+'</button>').join("");
- $("reportKpis").innerHTML=k.map((x,i)=>'<div class="kpi '+(i===2?"has-tooltip":"")+'"><div class="kpi-label">'+x[0]+'</div><div class="kpi-value">'+x[1]+'</div><div class="kpi-note">'+x[2]+'</div>'+(i===2?tooltip:"")+'</div>').join("");
+ $("kpiGrid").innerHTML=k.map((x,i)=>'<button class="kpi kpi-link '+(i===1?"has-tooltip":"")+'" data-kpi-target="'+targets[i]+'"><div class="kpi-label">'+x[0]+'</div><div class="kpi-value">'+x[1]+'</div><div class="kpi-note">'+x[2]+'</div>'+(i===1?tooltip:"")+'</button>').join("");
+ $("reportKpis").innerHTML=k.map((x,i)=>'<div class="kpi '+(i===1?"has-tooltip":"")+'"><div class="kpi-label">'+x[0]+'</div><div class="kpi-value">'+x[1]+'</div><div class="kpi-note">'+x[2]+'</div>'+(i===1?tooltip:"")+'</div>').join("");
 
  $("reserveTable").innerHTML=state.orders.filter(o=>o.status==="reserved").map(o=>'<tr><td><strong>'+orderLabel(o)+'</strong><div class="card-desc">'+subscriptionDeliveryLabel(o)+'</div></td><td>'+(clientById(o.client_id)?.company_name||(o.sales_channel==="retail"?"Розница":"—"))+'</td><td>'+dateRu(o.delivery_date)+'</td><td><div class="row-actions"><button class="small-btn" data-release="'+o.id+'">Удалить резерв</button><button class="small-btn" data-transfer="'+o.id+'">Перенести цветы</button><button class="small-btn" data-ship="'+o.id+'">Подтвердить отгрузку</button></div></td></tr>').join("")||'<tr><td colspan="4" class="empty">Активных резервов нет</td></tr>';
 
