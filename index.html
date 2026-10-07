@@ -300,7 +300,7 @@
           </div>
 
           <div class="card">
-            <div class="card-head"><div><h2>Подписки · отгрузки</h2><div class="card-desc">Сколько уже выполнено и сколько осталось</div></div></div>
+            <div class="card-head"><div><h2>Топ отгрузок по подпискам</h2><div class="card-desc">Сколько уже выполнено и сколько осталось</div></div></div>
             <div class="subscription-board" id="subscriptionBoard"></div>
           </div>
         </div>
@@ -325,11 +325,11 @@
         <div id="warehouse-overview" class="warehouse-view hidden">
           <div class="warehouse-summary" id="warehouseSummary">
             <div class="card warehouse-panel" id="freshWarehousePanel"><div class="card-head"><div><h2>Свежие цветы</h2><div class="card-desc">Суммарная стоимость по каждой позиции</div></div></div>
-              <div class="table-wrap"><table><thead><tr><th>Позиция</th><th>Цвет</th><th>Остаток</th><th>Ср. цена</th><th>Стоимость остатка</th><th class="summary-markup-head hidden">Рек. цена</th><th>Закупка</th><th></th></tr></thead><tbody id="freshValueTable"></tbody><tfoot><tr><td colspan="4"><strong>Итого</strong></td><td id="freshValueTotal"></td><td class="summary-markup-foot hidden"></td><td></td></tr></tfoot></table></div>
+              <div class="table-wrap"><table><thead><tr><th>Позиция</th><th>Цвет</th><th>Остаток</th><th>Ср. цена</th><th>Стоимость остатка</th><th class="summary-markup-head hidden">Рек. цена</th><th>Закупка</th><th></th></tr></thead><tbody id="freshValueTable"></tbody><tfoot><tr><td colspan="4"><strong>Итого</strong></td><td id="freshValueTotal"></td><td class="summary-markup-foot hidden"></td><td></td><td></td></tr></tfoot></table></div>
             </div>
             <div class="warehouse-splitter" id="warehouseSplitter" title="Тянуть для изменения ширины"></div>
             <div class="card warehouse-panel" id="driedWarehousePanel"><div class="card-head"><div><h2>Сухоцветы</h2><div class="card-desc">Суммарная стоимость по каждой позиции</div></div></div>
-              <div class="table-wrap"><table><thead><tr><th>Позиция</th><th>Цвет</th><th>Остаток</th><th>Ср. цена</th><th>Стоимость остатка</th><th class="summary-markup-head hidden">Рек. цена</th><th>Закупка</th><th></th></tr></thead><tbody id="driedValueTable"></tbody><tfoot><tr><td colspan="4"><strong>Итого</strong></td><td id="driedValueTotal"></td><td class="summary-markup-foot hidden"></td><td></td></tr></tfoot></table></div>
+              <div class="table-wrap"><table><thead><tr><th>Позиция</th><th>Цвет</th><th>Остаток</th><th>Ср. цена</th><th>Стоимость остатка</th><th class="summary-markup-head hidden">Рек. цена</th><th>Закупка</th><th></th></tr></thead><tbody id="driedValueTable"></tbody><tfoot><tr><td colspan="4"><strong>Итого</strong></td><td id="driedValueTotal"></td><td class="summary-markup-foot hidden"></td><td></td><td></td></tr></tfoot></table></div>
             </div>
           </div>
         </div>
@@ -582,7 +582,7 @@
       <div class="form-grid">
         <div class="full"><label>Название заказа / номер договора</label><input class="field" id="orderTitle" placeholder="Например, Договор №12"></div>
         <div><label>Клиент</label><select class="field-select" id="orderClient"></select></div>
-        <div><label>Формат</label><select class="field-select" id="orderModel"><option value="subscription">По подписке</option><option value="one_off">Долговечные цветы / разовая поставка</option><option value="retail">Розница</option></select></div>
+        <div><label>Формат</label><select class="field-select" id="orderModel"><option value="subscription">Будущая поставка по подписке</option><option value="one_off">Долговечные цветы / разовая поставка</option><option value="retail">Розница</option></select></div>
         <div><label>Дата отгрузки</label><input class="field" id="orderDate" type="date"></div>
         <div><label>Стоимость букета / поставки</label><input class="field" id="orderPrice" type="number" min="0" placeholder="5000"></div>
         <div id="orderDeliveryNoWrap"><label>Номер поставки по подписке *</label><input class="field" id="orderDeliveryNo" type="number" min="1" step="1" placeholder="Например, 2"><div class="card-desc" id="orderDeliveryHint"></div></div>
@@ -601,7 +601,7 @@
       <div class="modal-head"><h3>Создать заказ для закупки</h3><button class="x" data-close>×</button></div>
       <div class="mini-order-fields">
         <div class="full"><label>Название заказа / номер договора</label><input class="field" id="quickOrderTitle" placeholder="Договор №..."></div>
-        <div><label>Формат</label><select class="field-select" id="quickOrderModel"><option value="subscription">По подписке</option><option value="one_off">Долговечные / разовый</option><option value="retail">Розница</option></select></div>
+        <div><label>Формат</label><select class="field-select" id="quickOrderModel"><option value="subscription">Будущая поставка по подписке</option><option value="one_off">Долговечные / разовый</option><option value="retail">Розница</option></select></div>
         <div><label>Дата поставки</label><input class="field" id="quickOrderDate" type="date"></div>
         <div><label>Стоимость</label><input class="field" id="quickOrderPrice" type="number" min="0"></div>
         <div id="quickDeliveryWrap"><label>Номер поставки *</label><input class="field" id="quickDeliveryNo" type="number" min="1" step="1"></div>
@@ -903,7 +903,7 @@ function openModal(id){$(id+"Modal").classList.add("open");const d=$(id+"Date");
 function closeModal(id){$(id+"Modal")?.classList.remove("open")}
 function closeAll(){document.querySelectorAll(".modal-backdrop").forEach(m=>m.classList.remove("open"))}
 function resetClientModal(){$("clientEditId").value="";["clientCompany","clientInn","clientContact","clientPhone","clientNotes","clientDefaultPrice"].forEach(x=>$(x).value="");$("clientPaid").checked=false;$("clientPaid").disabled=false;$("clientPaidHint").textContent="";$("clientStatus").value="Переговоры";$("clientModel").value="subscription";$("subscriptionFields").classList.remove("hidden");$("subStatus").value="active";$("subPaid").disabled=false;$("subPaid").classList.remove("readonly");toggleClientFields()}
-function resetOrderModal(){$("orderEditId").value="";$("orderTitle").value="";$("orderClient").value="";$("orderModel").value="subscription";$("orderDate").value=today();$("orderPrice").value="";$("orderDeliveryNo").value="";$("orderNote").value="";$("reserveRows").innerHTML="";toggleOrderDeliveryField()}
+function resetOrderModal(){$("orderEditId").value="";$("orderTitle").value="";$("orderClient").value="";$("orderModel").value="subscription";$("orderDate").value=today();$("orderPrice").value="";$("orderDeliveryNo").value="";$("orderNote").value="";$("reserveRows").innerHTML="";setOrderFormLocked(false);toggleOrderDeliveryField()}
 function addReserveRow(itemId="",qty=1){const row=document.createElement("div");row.className="reserve-row";row.innerHTML='<div><label>Позиция</label><select class="field-select reserve-item">'+activeInventory().filter(i=>freeQty(i)>0||i.id===itemId).map(i=>'<option value="'+i.id+'" '+(i.id===itemId?"selected":"")+'>'+i.name+' · '+i.color+' · свободно '+freeQty(i)+'</option>').join("")+'</select></div><div><label>Кол-во</label><input class="field reserve-qty" type="number" min="1" value="'+qty+'"></div><button class="danger-btn" type="button">×</button>';row.querySelector(".danger-btn").onclick=()=>row.remove();$("reserveRows").appendChild(row)}
 function toast(message,type="ok"){const el=document.createElement("div");el.className="toast"+(type==="error"?" error":"");el.textContent=message;$("toastWrap").appendChild(el);setTimeout(()=>el.remove(),3500)}
 let confirmAction=null;
@@ -939,7 +939,11 @@ function editClient(id){
  $("clientModalTitle").textContent="Редактировать клиента";$("saveClient").textContent="Сохранить изменения";openModal("client")
 }
 async function deleteClient(id){const c=clientById(id);askConfirm({title:"Удалить клиента?",text:"«"+(c?.company_name||"Клиент")+"» исчезнет из рабочего списка, но оплаты и история останутся в отчётах. Если есть незавершённый заказ, CRM покажет его номер.",okText:"Удалить из списка",danger:true,onConfirm:()=>mutate("deleteClient",{id},"Клиент удалён из рабочего списка")})}
-function editOrder(id){const o=orderById(id);resetOrderModal();$("orderEditId").value=id;$("orderTitle").value=o.title||"";$("orderModel").value=o.sales_channel||(o.subscription_id?"subscription":"one_off");fillOrderClients();$("orderClient").value=o.client_id||"";$("orderDate").value=String(o.delivery_date).slice(0,10);$("orderPrice").value=o.sale_price;$("orderDeliveryNo").value=o.subscription_delivery_no||"";$("orderNote").value=o.note||"";toggleOrderDeliveryField();orderReservations(id).forEach(r=>addReserveRow(r.item_id,r.quantity));$("orderModalTitle").textContent="Редактировать "+orderLabel(o);$("saveOrder").textContent="Сохранить изменения";openModal("order")}
+function setOrderFormLocked(locked){
+ ["orderClient","orderModel","orderDate","orderPrice","orderDeliveryNo","orderNote","addReserveRow"].forEach(id=>{if($(id))$(id).disabled=locked});
+ document.querySelectorAll("#reserveRows input,#reserveRows select,#reserveRows button").forEach(el=>el.disabled=locked);
+}
+function editOrder(id){const o=orderById(id);resetOrderModal();$("orderEditId").value=id;$("orderTitle").value=o.title||"";$("orderModel").value=o.sales_channel||(o.subscription_id?"subscription":"one_off");fillOrderClients();$("orderClient").value=o.client_id||"";$("orderDate").value=String(o.delivery_date).slice(0,10);$("orderPrice").value=o.sale_price;$("orderDeliveryNo").value=o.subscription_delivery_no||"";$("orderNote").value=o.note||"";toggleOrderDeliveryField();orderReservations(id).forEach(r=>addReserveRow(r.item_id,r.quantity));const shipped=o.status==="shipped";setOrderFormLocked(shipped);$("orderModalTitle").textContent=(shipped?"Переименовать ":"Редактировать ")+orderLabel(o);$("saveOrder").textContent=shipped?"Сохранить название":"Сохранить изменения";openModal("order")}
 async function deleteOrder(id){askConfirm({title:"Удалить заказ?",text:"Резерв этого заказа будет освобождён. Отгруженные заказы удалить нельзя.",okText:"Удалить",danger:true,onConfirm:()=>mutate("deleteOrder",{id},"Заказ удалён")})}
 function toggleClientFields(){
  const model=$("clientModel").value;
