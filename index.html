@@ -353,6 +353,81 @@
       .mobile-drawer button:active,.mobile-drawer button:hover{background:var(--panel-2);color:var(--text)}
     }
 
+  
+    @media(max-width:700px){
+      .table-wrap tbody tr{
+        display:grid!important;
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:0 10px;
+        padding:8px 0!important;
+      }
+      .table-wrap tbody td{
+        display:flex!important;
+        flex-direction:column;
+        gap:2px!important;
+        padding:5px 2px!important;
+        min-width:0;
+        font-size:12px!important;
+        line-height:1.25;
+      }
+      .table-wrap tbody td::before{
+        content:attr(data-label);
+        display:block;
+        font-size:9px!important;
+        line-height:1.1;
+        margin-bottom:1px;
+        letter-spacing:.03em;
+      }
+      .table-wrap tbody td:has(.row-actions),
+      .table-wrap tbody td:has(button[data-edit-client]),
+      .table-wrap tbody td:has(button[data-edit-order]),
+      .table-wrap tbody td:has(button[data-view-purchase]),
+      .table-wrap tbody td:has(button[data-edit-payment]),
+      .table-wrap tbody td:has(button[data-edit-expense]),
+      .table-wrap tbody td:has(button[data-edit-writeoff]){
+        grid-column:1 / -1;
+      }
+      .table-wrap .row-actions{
+        display:flex!important;
+        flex-wrap:wrap;
+        gap:5px!important;
+      }
+      .table-wrap .row-actions button,
+      .table-wrap td > button{
+        min-height:32px!important;
+        padding:5px 8px!important;
+        font-size:11px!important;
+      }
+      .table-wrap .badge{
+        width:max-content;
+        padding:3px 6px;
+        font-size:10px;
+      }
+      .table-wrap .card-desc{
+        font-size:10px;
+        margin-top:2px;
+      }
+      .table-wrap tbody td.empty{
+        grid-column:1 / -1;
+        display:block!important;
+        padding:14px 4px!important;
+      }
+      .client-order-card{
+        padding:12px!important;
+        margin-bottom:8px!important;
+      }
+      .order-chain{gap:4px!important;font-size:11px!important}
+      .purchase-link-row{
+        padding:8px!important;
+        gap:8px!important;
+      }
+    }
+
+    @media(max-width:390px){
+      .table-wrap tbody tr{gap:0 7px}
+      .table-wrap tbody td{font-size:11px!important}
+    }
+
   </style>
 </head>
 <body>
