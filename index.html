@@ -235,6 +235,19 @@
     .purchase-link-list{display:grid;gap:8px}
     .purchase-link-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px;border:1px solid var(--line);border-radius:10px}
     @media(max-width:900px){.warehouse-summary{display:grid!important;grid-template-columns:1fr}.warehouse-splitter{display:none}.warehouse-panel{min-width:0}.purchase-target-row{grid-template-columns:1fr}.subscription-line{grid-template-columns:1fr}}
+  
+    .inventory-link{border:0;background:transparent;color:inherit;padding:0;font-weight:inherit;text-align:left;text-decoration:underline;text-decoration-color:transparent;text-underline-offset:3px}
+    .inventory-link:hover{text-decoration-color:currentColor}
+    tr.free-stock-row td{background:rgba(91,145,103,.10)}
+    body.light tr.free-stock-row td{background:#eef8ef}
+    .purchase-edit-grid{display:grid;grid-template-columns:1.5fr 1fr 110px 130px;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+    .merge-list{display:grid;gap:8px;max-height:320px;overflow:auto}
+    .merge-row{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--line);border-radius:10px}
+    .client-order-card{border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+    .client-order-top{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;margin-bottom:10px}
+    .order-chain{display:grid;gap:7px;font-size:12px;color:var(--soft)}
+    .order-chain strong{color:var(--text)}
+    @media(max-width:700px){.purchase-edit-grid{grid-template-columns:1fr 1fr}.client-order-top{flex-direction:column}}
   </style>
 </head>
 <body>
@@ -325,11 +338,11 @@
         <div id="warehouse-overview" class="warehouse-view hidden">
           <div class="warehouse-summary" id="warehouseSummary">
             <div class="card warehouse-panel" id="freshWarehousePanel"><div class="card-head"><div><h2>Свежие цветы</h2><div class="card-desc">Суммарная стоимость по каждой позиции</div></div></div>
-              <div class="table-wrap"><table><thead><tr><th>Позиция</th><th>Цвет</th><th>Остаток</th><th>Ср. цена</th><th>Стоимость остатка</th><th class="summary-markup-head hidden">Рек. цена</th><th>Закупка</th><th></th></tr></thead><tbody id="freshValueTable"></tbody><tfoot><tr><td colspan="4"><strong>Итого</strong></td><td id="freshValueTotal"></td><td class="summary-markup-foot hidden"></td><td></td><td></td></tr></tfoot></table></div>
+              <div class="table-wrap"><table><thead><tr><th>Позиция</th><th>Цвет</th><th>Свободно</th><th>Остаток</th><th>Ср. цена</th><th>Стоимость остатка</th><th class="summary-markup-head hidden">Рек. цена</th><th>Закупка</th><th></th></tr></thead><tbody id="freshValueTable"></tbody><tfoot><tr><td colspan="5"><strong>Итого</strong></td><td id="freshValueTotal"></td><td class="summary-markup-foot hidden"></td><td></td><td></td></tr></tfoot></table></div>
             </div>
             <div class="warehouse-splitter" id="warehouseSplitter" title="Тянуть для изменения ширины"></div>
             <div class="card warehouse-panel" id="driedWarehousePanel"><div class="card-head"><div><h2>Сухоцветы</h2><div class="card-desc">Суммарная стоимость по каждой позиции</div></div></div>
-              <div class="table-wrap"><table><thead><tr><th>Позиция</th><th>Цвет</th><th>Остаток</th><th>Ср. цена</th><th>Стоимость остатка</th><th class="summary-markup-head hidden">Рек. цена</th><th>Закупка</th><th></th></tr></thead><tbody id="driedValueTable"></tbody><tfoot><tr><td colspan="4"><strong>Итого</strong></td><td id="driedValueTotal"></td><td class="summary-markup-foot hidden"></td><td></td><td></td></tr></tfoot></table></div>
+              <div class="table-wrap"><table><thead><tr><th>Позиция</th><th>Цвет</th><th>Свободно</th><th>Остаток</th><th>Ср. цена</th><th>Стоимость остатка</th><th class="summary-markup-head hidden">Рек. цена</th><th>Закупка</th><th></th></tr></thead><tbody id="driedValueTable"></tbody><tfoot><tr><td colspan="5"><strong>Итого</strong></td><td id="driedValueTotal"></td><td class="summary-markup-foot hidden"></td><td></td><td></td></tr></tfoot></table></div>
             </div>
           </div>
         </div>
@@ -343,7 +356,7 @@
         <div class="card">
           <div class="card-head"><div><h2>Склад свежих цветов</h2><div class="card-desc">Вид цветка + цвет. Без углубления в сорта.</div></div><button class="secondary" data-new-inventory="fresh">+ Позиция</button></div>
           <div class="table-wrap"><table>
-            <thead><tr><th>Цветок</th><th>Цвет</th><th>Всего</th><th>В резерве</th><th>Свободно</th><th>Ср. себестоимость</th><th class="markup-head hidden">Рек. цена</th><th>Закупка</th><th></th></tr></thead>
+            <thead><tr><th>Цветок</th><th>Цвет</th><th>Свободно</th><th>Всего</th><th>В резерве</th><th>Ср. себестоимость</th><th class="markup-head hidden">Рек. цена</th><th>Закупка</th><th></th></tr></thead>
             <tbody id="freshTable"></tbody>
           </table></div>
         </div>
@@ -353,7 +366,7 @@
         <div class="card">
           <div class="card-head"><div><h2>Склад сухоцветов</h2><div class="card-desc">Отдельный учёт от свежих цветов</div></div><button class="secondary" data-new-inventory="dried">+ Позиция</button></div>
           <div class="table-wrap"><table>
-            <thead><tr><th>Позиция</th><th>Цвет</th><th>Всего</th><th>В резерве</th><th>Свободно</th><th>Ср. себестоимость</th><th class="markup-head hidden">Рек. цена</th><th>Закупка</th><th></th></tr></thead>
+            <thead><tr><th>Позиция</th><th>Цвет</th><th>Свободно</th><th>Всего</th><th>В резерве</th><th>Ср. себестоимость</th><th class="markup-head hidden">Рек. цена</th><th>Закупка</th><th></th></tr></thead>
             <tbody id="driedTable"></tbody>
           </table></div>
         </div>
@@ -361,7 +374,7 @@
 
       <section class="page" id="page-purchases">
         <div class="card">
-          <div class="card-head"><div><h2>Закупки</h2><div class="card-desc">Одна закупка = одна поездка или покупка, внутри может быть несколько позиций</div></div><button class="primary" id="openPurchase">+ Закупка</button></div>
+          <div class="card-head"><div><h2>Закупки</h2><div class="card-desc">Одна закупка = одна поездка или покупка, внутри может быть несколько позиций</div></div><div class="row-actions"><button class="secondary" id="mergePurchasesBtn">Объединить</button><button class="primary" id="openPurchase">+ Закупка</button></div></div>
           <div class="table-wrap"><table>
             <thead><tr><th>Дата</th><th>Закупка</th><th>Поставщик</th><th>Позиций</th><th>Сумма</th><th>Назначение</th><th></th></tr></thead>
             <tbody id="purchaseTable"></tbody>
@@ -519,7 +532,7 @@
           <div id="purchaseRows"></div>
           <div class="purchase-total" id="purchaseTotal">Итого: 0 ₽</div>
         </div>
-        <div class="full notice">Если выбран заказ, все позиции этой закупки попадут на склад и сразу зарезервируются под этот заказ.</div>
+        <div class="full notice">Закупка может быть привязана к клиенту или заказу для истории. Все купленные цветы сначала попадают на склад. В заказ резервируется только то количество, которое ты сам добавишь в состав заказа — остаток остаётся свободным.</div>
       </div>
       <div class="modal-footer"><button class="ghost" data-close>Отмена</button><button class="primary" id="savePurchase">Сохранить закупку</button></div>
     </div>
@@ -527,9 +540,34 @@
 
   <div class="modal-backdrop" id="purchaseDetailsModal">
     <div class="modal">
+      <input type="hidden" id="purchaseDetailsId">
       <div class="modal-head"><h3 id="purchaseDetailsTitle">Закупка</h3><button class="x" data-close>×</button></div>
       <div id="purchaseDetailsMeta" class="notice" style="margin-bottom:14px"></div>
       <div class="detail-list" id="purchaseDetailsBody"></div>
+      <div class="modal-footer">
+        <button class="ghost" data-close>Закрыть</button>
+        <button class="secondary" id="editPurchaseDetails">Изменить</button>
+        <button class="primary hidden" id="savePurchaseDetails">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="mergePurchasesModal">
+    <div class="modal small">
+      <div class="modal-head"><h3>Объединить закупки</h3><button class="x" data-close>×</button></div>
+      <div class="merge-list" id="mergePurchasesList"></div>
+      <div class="form-grid" style="margin-top:14px">
+        <div><label>Название новой закупки</label><input class="field" id="mergePurchaseTitle" placeholder="Общая закупка"></div>
+        <div><label>Поставщик</label><input class="field" id="mergePurchaseSupplier" placeholder="Поставщик"></div>
+      </div>
+      <div class="modal-footer"><button class="ghost" data-close>Отмена</button><button class="primary" id="saveMergePurchases">Сохранить</button></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="clientOrdersModal">
+    <div class="modal">
+      <div class="modal-head"><h3 id="clientOrdersTitle">Заказы клиента</h3><button class="x" data-close>×</button></div>
+      <div id="clientOrdersBody"></div>
       <div class="modal-footer"><button class="ghost" data-close>Закрыть</button></div>
     </div>
   </div>
