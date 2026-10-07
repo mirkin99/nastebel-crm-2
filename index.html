@@ -257,21 +257,17 @@
       .appbar{position:sticky;top:0;z-index:80;height:54px;min-height:54px;padding:0 12px;display:flex;align-items:center;gap:8px;flex-wrap:nowrap}
       .mobile-menu-toggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
       .appbar .brand{font-size:14px;flex:1}
-      .menu-bar{
+      .mobile-drawer{
         position:fixed;left:0;top:0;bottom:0;z-index:100;width:min(82vw,320px);height:100dvh;
         display:flex;flex-direction:column;align-items:stretch;gap:4px;padding:18px 12px 24px;
         background:#15181a;border-right:1px solid var(--line);overflow-y:auto;overflow-x:hidden;
         transform:translateX(-102%);transition:transform .22s ease;box-shadow:18px 0 50px rgba(0,0,0,.32)
       }
-      body.light .menu-bar{background:#eceeeb}
-      body.mobile-menu-open .menu-bar{transform:translateX(0)}
+      body.light .mobile-drawer{background:#eceeeb}
+      body.mobile-menu-open .mobile-drawer{transform:translateX(0)}
       .mobile-menu-backdrop{position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;display:block;transition:opacity .22s ease}
       body.mobile-menu-open .mobile-menu-backdrop{opacity:1;pointer-events:auto}
       body.mobile-menu-open{overflow:hidden}
-      .menu-bar::before{
-        content:"NASTEBEL";display:block;padding:7px 10px 15px;font-size:15px;font-weight:700;
-        letter-spacing:.16em;color:var(--text);border-bottom:1px solid var(--line);margin-bottom:6px
-      }
       .settings-link,.menu-trigger{
         width:100%;min-height:44px;padding:0 12px!important;text-align:left;border-radius:10px;
         display:flex;align-items:center;justify-content:space-between;white-space:normal!important;color:var(--soft)
@@ -338,6 +334,25 @@
       .table-wrap tbody td{grid-template-columns:82px 1fr}
     }
 
+  
+    .mobile-drawer{display:none}
+    @media(max-width:700px){
+      .desktop-menu{display:none!important}
+      .mobile-drawer{display:flex}
+      .mobile-drawer-brand{
+        padding:7px 10px 15px;font-size:15px;font-weight:700;letter-spacing:.16em;color:var(--text);
+        border-bottom:1px solid var(--line);margin-bottom:6px
+      }
+      .mobile-drawer-label{
+        padding:13px 10px 5px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)
+      }
+      .mobile-drawer button{
+        width:100%;min-height:44px;border:0;background:transparent;color:var(--soft);
+        padding:0 12px;text-align:left;border-radius:10px;font-size:15px
+      }
+      .mobile-drawer button:active,.mobile-drawer button:hover{background:var(--panel-2);color:var(--text)}
+    }
+
   </style>
 </head>
 <body>
@@ -355,7 +370,7 @@
     <header class="appbar">
       <button class="mobile-menu-toggle" id="mobileMenuToggle" type="button" aria-label="Открыть меню">☰</button>
       <button class="brand brand-home" id="brandHome" type="button">NASTEBEL</button>
-      <nav class="menu-bar" id="mobileMenu">
+      <nav class="menu-bar desktop-menu">
         <button class="settings-link" data-page="dashboard">Главная</button>
         <button class="settings-link" data-page="warehouse">Склад</button>
         <div class="menu-dropdown"><button class="menu-trigger">Продажи</button><div class="menu-popup">
@@ -376,6 +391,25 @@
         <button class="settings-link" data-page="history">История</button>
       </nav>
     </header>
+    <nav class="mobile-drawer" id="mobileMenu" aria-label="Мобильное меню">
+      <div class="mobile-drawer-brand">NASTEBEL</div>
+      <button data-page="dashboard">Главная</button>
+      <button data-page="warehouse">Склад</button>
+      <div class="mobile-drawer-label">Продажи</div>
+      <button data-page="orders">Заказы</button>
+      <button data-page="clients">Клиенты</button>
+      <div class="mobile-drawer-label">Финансы</div>
+      <button data-page="payments">Оплаты</button>
+      <button data-page="expenses">Расходы</button>
+      <div class="mobile-drawer-label">Создать</div>
+      <button data-open="purchase">+ Закупка</button>
+      <button data-open="client">+ Клиент</button>
+      <button data-open="order">+ Заказ</button>
+      <div class="mobile-drawer-label">Система</div>
+      <button data-page="reports">Отчёты</button>
+      <button data-page="history">История</button>
+      <button data-page="settings">Настройки</button>
+    </nav>
     <div class="mobile-menu-backdrop" id="mobileMenuBackdrop"></div>
 
     <main class="main">
@@ -861,9 +895,12 @@ function decorateMobileTables(){
  });
 }
 function showPage(name){
+ const target=$("page-"+name);
+ if(!target){toast("Раздел временно недоступен: "+name,"error");return false}
  document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
- $("page-"+name).classList.add("active");
- $("pageTitle").textContent=pageMeta[name][0];$("pageSubtitle").textContent=pageMeta[name][1];
+ target.classList.add("active");
+ const meta=pageMeta[name]||[name,""];
+ $("pageTitle").textContent=meta[0];$("pageSubtitle").textContent=meta[1];
  document.querySelectorAll(".menu-dropdown").forEach(x=>x.classList.remove("open"));
  closeMobileMenu();
  if(window.innerWidth<=700)window.scrollTo({top:0,behavior:"auto"});
@@ -1229,10 +1266,15 @@ function initWarehouseSplitter(){
  document.addEventListener("mousemove",e=>{if(!dragging||window.innerWidth<=900)return;const r=wrap.getBoundingClientRect(),pct=(e.clientX-r.left)/r.width*100,clamped=Math.min(75,Math.max(25,pct));left.style.flexBasis=clamped+"%";localStorage.setItem("nastebel_warehouse_split",String(clamped))});
  document.addEventListener("mouseup",()=>{if(dragging){dragging=false;document.body.style.userSelect=""}});
 }
-document.querySelectorAll("[data-page]").forEach(b=>b.onclick=()=>{showPage(b.dataset.page);if(b.dataset.warehouseOpen)setWarehouseView(b.dataset.warehouseOpen)});
+document.querySelectorAll("[data-page]").forEach(b=>b.onclick=e=>{
+ if(e){e.preventDefault();e.stopPropagation()}
+ const ok=showPage(b.dataset.page);
+ if(ok!==false&&b.dataset.warehouseOpen)setWarehouseView(b.dataset.warehouseOpen);
+});
 document.querySelectorAll(".menu-trigger").forEach(b=>b.onclick=e=>{e.stopPropagation();const p=b.parentElement;document.querySelectorAll(".menu-dropdown").forEach(x=>{if(x!==p)x.classList.remove("open")});p.classList.toggle("open")});
-$("mobileMenuToggle").onclick=e=>{e.stopPropagation();toggleMobileMenu()};
-$("mobileMenuBackdrop").onclick=closeMobileMenu;
+$("mobileMenuToggle").onclick=e=>{e.preventDefault();e.stopPropagation();toggleMobileMenu()};
+$("mobileMenuBackdrop").onclick=e=>{e.preventDefault();closeMobileMenu()};
+$("mobileMenu").onclick=e=>e.stopPropagation();
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMobileMenu()});
 document.addEventListener("click",()=>document.querySelectorAll(".menu-dropdown").forEach(x=>x.classList.remove("open")));document.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>{closeMobileMenu();if(b.dataset.open==="client")resetClientModal();if(b.dataset.open==="order")resetOrderModal();if(b.dataset.open==="purchase")resetPurchaseModal();openModal(b.dataset.open)});document.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeAll);document.querySelectorAll(".modal-backdrop").forEach(m=>m.onclick=e=>{if(e.target===m)closeAll()});
 $("brandHome").onclick=()=>{closeMobileMenu();showPage("dashboard")};
