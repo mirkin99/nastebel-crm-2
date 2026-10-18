@@ -430,7 +430,44 @@
       .table-wrap tbody td{font-size:11px!important}
     }
 
-  </style>
+  
+    #purchaseModal .modal,#purchaseDetailsModal .modal{width:min(1040px,96vw)}
+    .purchase-line{grid-template-columns:repeat(6,minmax(0,1fr));gap:14px;padding:18px;margin:0 0 16px;border:1px solid var(--line);border-radius:14px;align-items:start;background:var(--panel-2)}
+    .purchase-line>div,.purchase-edit-grid>div,.reserve-row>div{min-width:0}
+    .purchase-line>.purchase-category-wrap{grid-column:1;grid-row:1}
+    .purchase-line>.purchase-name-wrap{grid-column:2/span 3;grid-row:1}
+    .purchase-line>.purchase-color-wrap{grid-column:5/span 2;grid-row:1}
+    .purchase-line>.purchase-unit-wrap{grid-column:1/span 2;grid-row:2}
+    .purchase-line>.purchase-unit-size-wrap{grid-column:3;grid-row:2}
+    .purchase-line>.purchase-qty-wrap{grid-column:4;grid-row:2}
+    .purchase-line>.purchase-cost-wrap{grid-column:5;grid-row:2}
+    .purchase-line>.danger-btn{grid-column:6;grid-row:2;align-self:end;justify-self:end}
+    .purchase-line>.purchase-options{grid-column:1/-1;grid-row:3}
+    .purchase-options label{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--text)}
+    .purchase-options input[type=checkbox]{width:18px;height:18px;flex:none}
+    .purchase-conversion{margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:10px}
+    .purchase-conversion .field{max-width:160px;margin-top:6px}
+    .purchase-edit-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;padding:18px;margin-bottom:16px;border:1px solid var(--line);border-radius:14px;background:var(--panel-2)}
+    .purchase-edit-grid>.purchase-detail-title{grid-column:1/-1;font-size:16px;overflow-wrap:anywhere}
+    .purchase-edit-grid>.purchase-detail-color-wrap,.purchase-edit-grid>.purchase-detail-unit-wrap{grid-column:span 2}
+    .purchase-edit-grid>.purchase-detail-cost-wrap{grid-column:span 2}
+    .purchase-edit-grid>.purchase-options{grid-column:1/-1}
+    .purchase-line input,.purchase-line select,.purchase-edit-grid input,.purchase-edit-grid select{width:100%;min-width:0}
+    .purchase-line input[type=checkbox],.purchase-edit-grid input[type=checkbox]{width:18px}
+    .kpi-tooltip{right:auto;left:0;width:min(380px,calc(100vw - 64px));min-width:0}
+    .tooltip-row{align-items:flex-start;gap:16px}
+    .tooltip-row>span{flex:1;min-width:0;overflow-wrap:anywhere}
+    .tooltip-row>strong{flex:0 0 auto;white-space:nowrap}
+    @media(max-width:700px){
+      #purchaseModal .modal,#purchaseDetailsModal .modal{width:100%;max-width:100vw}
+      .purchase-line,.purchase-edit-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;padding:14px;gap:12px}
+      .purchase-line>*{grid-row:auto!important;grid-column:span 1!important}
+      .purchase-line>.purchase-name-wrap,.purchase-line>.purchase-options,.purchase-line>.purchase-unit-wrap{grid-column:1/-1!important}
+      .purchase-line>.purchase-name-wrap{order:-1}
+      .purchase-edit-grid>.purchase-detail-title,.purchase-edit-grid>.purchase-options,.purchase-edit-grid>.purchase-detail-unit-wrap{grid-column:1/-1}
+      .purchase-edit-grid>.purchase-detail-color-wrap,.purchase-edit-grid>.purchase-detail-cost-wrap{grid-column:span 1}
+    }
+</style>
 </head>
 <body>
   <section class="login" id="loginScreen">
@@ -1272,10 +1309,51 @@ function resetWriteoffModal(){syncWriteoffUnit();$("writeoffEditId").value="";$(
 function editWriteoff(id){const w=state.writeoffs.find(x=>x.id===id);resetWriteoffModal();$("writeoffEditId").value=id;$("writeoffModalTitle").textContent="Редактировать списание";$("writeoffItem").value=w.item_id;$("writeoffQty").value=w.quantity;syncWriteoffUnit();$("writeoffReason").value=w.reason;openModal("writeoff");$("writeoffDate")&&($("writeoffDate").value=String(w.writeoff_date).slice(0,10))}
 async function deleteWriteoff(id){askConfirm({title:"Отменить списание?",text:"Списанное количество будет возвращено обратно на физический склад.",okText:"Вернуть на склад",danger:true,onConfirm:()=>mutate("deleteWriteoff",{id},"Списание отменено")})}
 function resetPurchaseModal(){$("purchaseTitle").value="";$("purchaseDate").value=today();$("purchaseSupplier").value="";$("purchaseClient").value="";$("purchaseNote").value="";$("purchaseRows").innerHTML="";fillPurchaseOrders();addPurchaseRow()}
-function togglePurchaseUnit(row){const pct=row.querySelector(".purchase-percent").checked;const u=row.querySelector(".purchase-unit").value,isPiece=u==="piece",wrap=row.querySelector(".purchase-unit-size-wrap");wrap.classList.toggle("hidden",isPiece||pct);row.querySelector(".purchase-percent-wrap").classList.toggle("hidden",isPiece);if(isPiece)row.querySelector(".purchase-percent").checked=false;row.querySelector(".purchase-unit-size-label").textContent=u==="bunch"?"Шт. в пучке":"Шт. в упаковке";row.querySelector(".purchase-cost-label").textContent="Цена / "+unitName(u);if(isPiece)row.querySelector(".purchase-unit-size").value=1}
-function addPurchaseRow(data={}){const row=document.createElement("div");row.className="purchase-line";row.innerHTML='<div><label>Склад</label><select class="field-select purchase-category"><option value="fresh">Свежие</option><option value="dried">Долговечные</option></select></div><div><label>Позиция</label><input class="field purchase-name" list="flowerList" placeholder="Хризантема"></div><div><label>Цвет</label><input class="field purchase-color" placeholder="Белый"></div><div><label>Единица</label><select class="field-select purchase-unit"><option value="piece">Штука</option><option value="bunch">Пучок / связка</option><option value="package">Упаковка</option></select><label class="purchase-percent-wrap hidden" style="margin-top:8px"><input type="checkbox" class="purchase-percent"> Невозможно посчитать</label><div class="card-desc purchase-percent-hint hidden"></div></div><div class="purchase-unit-size-wrap hidden"><label class="purchase-unit-size-label">Штук в единице</label><input class="field purchase-unit-size" type="number" min="1" step="1" value="1"></div><div><label>Кол-во</label><input class="field purchase-qty" type="number" min="1" value="1"></div><div><label class="purchase-cost-label">Цена / шт.</label><input class="field purchase-cost" type="number" min="0" step="0.01" value="0"></div><button class="danger-btn" type="button">×</button>';row.querySelector(".purchase-category").value=data.category||"fresh";row.querySelector(".purchase-name").value=data.name||"";row.querySelector(".purchase-color").value=data.color||"";row.querySelector(".purchase-unit").value=data.unit_type==="percent"?"bunch":data.unit_type||"piece";row.querySelector(".purchase-percent").checked=data.unit_type==="percent";row.querySelector(".purchase-unit-size").value=data.units_per_unit||1;row.querySelector(".purchase-qty").value=data.quantity||1;row.querySelector(".purchase-cost").value=data.unit_cost||0;togglePurchaseUnit(row);row.querySelector(".purchase-percent").onchange=()=>{togglePurchaseUnit(row);updatePurchaseTotal()};row.querySelector(".purchase-unit").onchange=()=>{togglePurchaseUnit(row);updatePurchaseTotal()};row.querySelector(".danger-btn").onclick=()=>{if($("purchaseRows").children.length>1)row.remove();updatePurchaseTotal()};row.querySelectorAll("input,select").forEach(el=>el.addEventListener("input",updatePurchaseTotal));$("purchaseRows").appendChild(row);updatePurchaseTotal()}
-function purchaseItemsPayload(){return [...document.querySelectorAll('#purchaseRows .purchase-line')].map(row=>{const pct=row.querySelector('.purchase-percent').checked;return {category:row.querySelector('.purchase-category').value,name:row.querySelector('.purchase-name').value.trim(),color:row.querySelector('.purchase-color').value.trim()||'Без цвета',unit_type:pct?'percent':row.querySelector('.purchase-unit').value,units_per_unit:pct?1:Number(row.querySelector('.purchase-unit-size').value||1),quantity:Number(row.querySelector('.purchase-qty').value)*(pct?100:1),unit_cost:Number(row.querySelector('.purchase-cost').value)/(pct?100:1)}})}
-function updatePurchaseTotal(){document.querySelectorAll('#purchaseRows .purchase-line').forEach(row=>{const pct=row.querySelector('.purchase-percent').checked,hint=row.querySelector('.purchase-percent-hint');hint.classList.toggle('hidden',!pct);hint.textContent='100% = один целый пучок / упаковка. На склад: '+Number(row.querySelector('.purchase-qty').value||0)*100+'%';});const total=[...document.querySelectorAll("#purchaseRows .purchase-line")].reduce((s,row)=>s+Number(row.querySelector(".purchase-qty").value||0)*Number(row.querySelector(".purchase-cost").value||0),0);$("purchaseTotal").textContent="Итого: "+rub(total)}
+function purchaseUnitValue(row,detail=false){const prefix=detail?'purchase-detail':'purchase';return row.querySelector('.'+prefix+'-percent').checked?'percent':row.querySelector('.'+prefix+'-unit').value}
+function purchaseMatch(row){const name=row.querySelector('.purchase-name').value.trim().toLowerCase(),color=(row.querySelector('.purchase-color').value.trim()||'Без цвета').toLowerCase(),category=row.querySelector('.purchase-category').value;return activeInventory().find(i=>i.category===category&&i.name.toLowerCase()===name&&i.color.toLowerCase()===color)}
+function togglePurchaseUnit(row,recalculate=true){
+ const u=row.querySelector('.purchase-unit').value,piece=u==='piece';if(piece)row.querySelector('.purchase-percent').checked=false;
+ const pct=row.querySelector('.purchase-percent').checked;
+ row.querySelector('.purchase-unit-size-wrap').classList.toggle('hidden',piece||pct);
+ row.querySelector('.purchase-percent-wrap').classList.toggle('hidden',piece);
+ row.querySelector('.purchase-unit-size-label').textContent=u==='bunch'?'Штук в пучке':'Штук в упаковке';
+ row.querySelector('.purchase-cost-label').textContent='Цена за '+unitName(u);
+ row.querySelector('.purchase-qty-label').textContent=piece?'Количество, шт.':'Количество '+(u==='bunch'?'пучков':'упаковок');
+ if(piece)row.querySelector('.purchase-unit-size').value=1;
+ if(recalculate)updatePurchaseTotal();
+}
+function addPurchaseRow(data={}){
+ const row=document.createElement('div');row.className='purchase-line';
+ row.innerHTML='<div class="purchase-category-wrap"><label>Склад</label><select class="field-select purchase-category"><option value="fresh">Свежие</option><option value="dried">Долговечные</option></select></div><div class="purchase-name-wrap"><label>Позиция</label><input class="field purchase-name" list="flowerList" placeholder="Название цветка или материала"></div><div class="purchase-color-wrap"><label>Цвет</label><input class="field purchase-color" placeholder="Белый"></div><div class="purchase-unit-wrap"><label>Единица</label><select class="field-select purchase-unit"><option value="piece">Штука</option><option value="bunch">Пучок / связка</option><option value="package">Упаковка</option></select></div><div class="purchase-unit-size-wrap"><label class="purchase-unit-size-label">Штук внутри</label><input class="field purchase-unit-size" type="number" min="1" step="1" value="1"></div><div class="purchase-qty-wrap"><label class="purchase-qty-label">Количество</label><input class="field purchase-qty" type="number" min="0.01" step="any" value="1"></div><div class="purchase-cost-wrap"><label class="purchase-cost-label">Цена за шт.</label><input class="field purchase-cost" type="number" min="0" step="any" value="0"></div><button class="danger-btn" type="button" aria-label="Удалить позицию">Удалить</button><div class="purchase-options"><label class="purchase-percent-wrap hidden"><input type="checkbox" class="purchase-percent"> Невозможно посчитать количество — учитывать в процентах</label><div class="card-desc purchase-percent-hint hidden"></div><div class="purchase-conversion hidden"><label>Сколько прежних единиц составляют один целый пучок / упаковку?</label><input class="field purchase-conversion-base" type="number" min="0.0001" step="any" value="1"><div class="card-desc purchase-conversion-hint"></div></div></div>';
+ row.querySelector('.purchase-category').value=data.category||'fresh';row.querySelector('.purchase-name').value=data.name||'';row.querySelector('.purchase-color').value=data.color||'';row.querySelector('.purchase-unit').value=data.unit_type==='percent'?'bunch':data.unit_type||'piece';row.querySelector('.purchase-percent').checked=data.unit_type==='percent';row.querySelector('.purchase-unit-size').value=data.units_per_unit||1;row.querySelector('.purchase-qty').value=data.quantity||1;row.querySelector('.purchase-cost').value=data.unit_cost||0;
+ row.querySelector('.purchase-unit').onchange=()=>{row.dataset.unitTouched='1';togglePurchaseUnit(row)};row.querySelector('.purchase-percent').onchange=()=>{row.dataset.unitTouched='1';togglePurchaseUnit(row)};
+ row.querySelector('.danger-btn').onclick=()=>{row.remove();updatePurchaseTotal()};
+ row.querySelectorAll('input,select').forEach(el=>el.addEventListener('input',updatePurchaseTotal));
+ $('purchaseRows').appendChild(row);togglePurchaseUnit(row);
+}
+function purchaseItemsPayload(){return [...document.querySelectorAll('#purchaseRows .purchase-line')].map(row=>{const pct=row.querySelector('.purchase-percent').checked;return {category:row.querySelector('.purchase-category').value,name:row.querySelector('.purchase-name').value.trim(),color:row.querySelector('.purchase-color').value.trim()||'Без цвета',unit_type:purchaseUnitValue(row),units_per_unit:pct?1:Number(row.querySelector('.purchase-unit-size').value||1),conversion_base:Number(row.querySelector('.purchase-conversion-base').value||1),quantity:Number(row.querySelector('.purchase-qty').value)*(pct?100:1),unit_cost:Number(row.querySelector('.purchase-cost').value)/(pct?100:1)}})}
+function updatePurchaseTotal(){
+ document.querySelectorAll('#purchaseRows .purchase-line').forEach(row=>{
+  const matched=purchaseMatch(row);if(matched&&row.dataset.identity!==matched.id){row.dataset.identity=matched.id;if(!row.dataset.unitTouched){row.querySelector('.purchase-unit').value=matched.unit_type==='percent'?'bunch':matched.unit_type;row.querySelector('.purchase-percent').checked=matched.unit_type==='percent';row.querySelector('.purchase-unit-size').value=matched.units_per_unit||1;togglePurchaseUnit(row,false)}}
+  const pct=row.querySelector('.purchase-percent').checked,hint=row.querySelector('.purchase-percent-hint');hint.classList.toggle('hidden',!pct);hint.textContent='100% = один целый пучок / упаковка. На склад: '+Number(row.querySelector('.purchase-qty').value||0)*100+'%';
+  const old=purchaseMatch(row),unit=purchaseUnitValue(row),convert=old&&old.unit_type!==unit;row.querySelector('.purchase-conversion').classList.toggle('hidden',!convert);
+  if(convert){const input=row.querySelector('.purchase-conversion-base');if(row.dataset.match!==old.id+unit){input.value=old.unit_type==='piece'&&unit!=='percent'?Number(row.querySelector('.purchase-unit-size').value||1):1;row.dataset.match=old.id+unit}row.querySelector('.purchase-conversion-hint').textContent='На складе эта позиция учитывается в '+unitName(old.unit_type)+'. При сохранении остатки и связанные операции будут пересчитаны; их стоимость сохранится.';}
+ });
+ const total=[...document.querySelectorAll('#purchaseRows .purchase-line')].reduce((sum,row)=>sum+Number(row.querySelector('.purchase-qty').value||0)*Number(row.querySelector('.purchase-cost').value||0),0);$('purchaseTotal').textContent='Итого: '+rub(total);
+}
+function togglePurchaseDetailUnit(row){
+ const u=row.querySelector('.purchase-detail-unit').value,piece=u==='piece';if(piece)row.querySelector('.purchase-detail-percent').checked=false;
+ const pct=row.querySelector('.purchase-detail-percent').checked;
+ row.querySelector('.purchase-detail-percent-wrap').classList.toggle('hidden',piece);row.querySelector('.purchase-detail-size-wrap').classList.toggle('hidden',piece||pct);
+ row.querySelector('.purchase-detail-qty-label').textContent=piece?'Количество, шт.':'Количество '+(u==='bunch'?'пучков':'упаковок');
+ row.querySelector('.purchase-detail-cost-label').textContent='Цена за '+unitName(u);
+ row.querySelector('.purchase-detail-percent-hint').classList.toggle('hidden',!pct);
+ row.querySelector('.purchase-detail-percent-hint').textContent='100% = один целый пучок / упаковка. В этой закупке: '+Number(row.querySelector('.purchase-detail-qty').value||0)*100+'%';
+ const old=row.dataset.originalUnit,unit=purchaseUnitValue(row,true),conversion=old!==unit;
+ row.querySelector('.purchase-detail-conversion').classList.toggle('hidden',!conversion);
+}
+function purchaseDetailsPayload(){return [...document.querySelectorAll('[data-purchase-edit-item]')].map(row=>{const pct=row.querySelector('.purchase-detail-percent').checked;return {item_id:row.dataset.purchaseEditItem,color:row.querySelector('.purchase-detail-color').value.trim()||'Без цвета',unit_type:purchaseUnitValue(row,true),units_per_unit:pct?1:Number(row.querySelector('.purchase-detail-size').value||1),conversion_base:Number(row.querySelector('.purchase-detail-conversion-base').value||1),quantity:Number(row.querySelector('.purchase-detail-qty').value)*(pct?100:1),unit_cost:Number(row.querySelector('.purchase-detail-cost').value)/(pct?100:1)}})}
+
 function purchaseDetailsView(id,editing=false){
  const p=state.purchases.find(x=>x.id===id);if(!p)return;
  const lines=state.purchaseItems.filter(pi=>pi.purchase_id===id),o=p.target_order_id?orderById(p.target_order_id):null,c=clientById(p.target_client_id||o?.client_id);
@@ -1283,7 +1361,14 @@ function purchaseDetailsView(id,editing=false){
  $("purchaseDetailsTitle").textContent=p.title||"Закупка";
  $("purchaseDetailsMeta").textContent=dateRu(p.purchase_date)+" · "+(p.supplier||"без поставщика")+" · "+(c?c.company_name:"общий склад")+(o?" · "+orderLabel(o):"")+(p.note?" · "+p.note:"");
  if(editing){
-  $("purchaseDetailsBody").innerHTML=lines.map(pi=>{const i=itemById(pi.item_id),u=pi.unit_type||i?.unit_type||"piece",sz=Number(pi.units_per_unit||i?.units_per_unit||1);return '<div class="purchase-edit-grid" data-purchase-edit-item="'+pi.item_id+'"><div><strong>'+(i?.name||"Позиция")+'</strong><div class="card-desc">'+(i?.category==="fresh"?"Свежие":"Долговечные")+'</div></div><div><label>Цвет</label><input class="field purchase-detail-color" value="'+(i?.color||"")+'"></div><div><label>Единица</label><select class="field-select purchase-detail-unit"><option value="piece" '+(u==="piece"?"selected":"")+'>Штука</option><option value="bunch" '+(u==="bunch"?"selected":"")+'>Пучок / связка</option><option value="package" '+(u==="package"?"selected":"")+'>Упаковка</option><option value="percent" '+(u==="percent"?"selected":"")+'>Проценты — невозможно посчитать</option></select></div><div class="purchase-detail-size-wrap '+(["piece","percent"].includes(u)?"hidden":"")+'"><label>Штук внутри</label><input class="field purchase-detail-size" type="number" min="1" value="'+sz+'"></div><div><label>Количество</label><input class="field purchase-detail-qty" type="number" min="0.01" step="any" value="'+pi.quantity+'"></div><div><label>Цена / ед.</label><input class="field purchase-detail-cost" type="number" min="0" step="0.01" value="'+Number(pi.unit_cost)+'"></div></div>'}).join("");document.querySelectorAll(".purchase-detail-unit").forEach(s=>s.onchange=()=>{const row=s.closest("[data-purchase-edit-item]"),piece=["piece","percent"].includes(s.value),old=row.dataset.unit||itemById(row.dataset.purchaseEditItem)?.unit_type||"piece",now=s.value;if((old==="percent")!==(now==="percent")){const factor=now==="percent"?100:0.01;row.querySelector(".purchase-detail-qty").value=Number(row.querySelector(".purchase-detail-qty").value)*factor;row.querySelector(".purchase-detail-cost").value=Number(row.querySelector(".purchase-detail-cost").value)/factor;}row.dataset.unit=now;row.querySelector(".purchase-detail-size-wrap").classList.toggle("hidden",piece);if(piece)row.querySelector(".purchase-detail-size").value=1});
+  $('purchaseDetailsBody').replaceChildren();
+  lines.forEach(pi=>{
+   const i=itemById(pi.item_id),u=pi.unit_type||i?.unit_type||'piece',pct=u==='percent',row=document.createElement('div');row.className='purchase-edit-grid';row.dataset.purchaseEditItem=pi.item_id;row.dataset.originalUnit=u;
+   row.innerHTML='<div class="purchase-detail-title"><strong></strong><div class="card-desc"></div></div><div class="purchase-detail-color-wrap"><label>Цвет</label><input class="field purchase-detail-color"></div><div class="purchase-detail-unit-wrap"><label>Единица</label><select class="field-select purchase-detail-unit"><option value="piece">Штука</option><option value="bunch">Пучок / связка</option><option value="package">Упаковка</option></select></div><div class="purchase-detail-size-wrap"><label>Штук внутри</label><input class="field purchase-detail-size" type="number" min="1" value="1"></div><div><label class="purchase-detail-qty-label">Количество</label><input class="field purchase-detail-qty" type="number" min="0.0001" step="any"></div><div class="purchase-detail-cost-wrap"><label class="purchase-detail-cost-label">Цена за единицу</label><input class="field purchase-detail-cost" type="number" min="0" step="any"></div><div class="purchase-options"><label class="purchase-detail-percent-wrap"><input type="checkbox" class="purchase-detail-percent"> Невозможно посчитать количество — учитывать в процентах</label><div class="card-desc purchase-detail-percent-hint"></div><div class="purchase-conversion purchase-detail-conversion hidden"><label>Сколько прежних единиц составляют одно целое (100%)?</label><input class="field purchase-detail-conversion-base" type="number" min="0.0001" step="any" value="1"><div class="card-desc">Для прежнего пучка — 1. Если раньше 50 штук обозначали один пучок — укажите 50 и количество пучков 1. Стоимость прошлых операций сохранится.</div></div></div>';
+   row.querySelector('.purchase-detail-title strong').textContent=i?.name||'Позиция';row.querySelector('.purchase-detail-title .card-desc').textContent=i?.category==='fresh'?'Свежие':'Долговечные';row.querySelector('.purchase-detail-color').value=i?.color||'';row.querySelector('.purchase-detail-unit').value=pct?'bunch':u;row.querySelector('.purchase-detail-percent').checked=pct;row.querySelector('.purchase-detail-size').value=pi.units_per_unit||i?.units_per_unit||1;row.querySelector('.purchase-detail-qty').value=Number(pi.quantity)/(pct?100:1);row.querySelector('.purchase-detail-cost').value=Number(pi.unit_cost)*(pct?100:1);
+   row.querySelector('.purchase-detail-unit').onchange=()=>togglePurchaseDetailUnit(row);row.querySelector('.purchase-detail-percent').onchange=()=>togglePurchaseDetailUnit(row);row.querySelector('.purchase-detail-qty').oninput=()=>togglePurchaseDetailUnit(row);row.querySelector('.purchase-detail-conversion-base').oninput=()=>{const base=Number(row.querySelector('.purchase-detail-conversion-base').value);if(base>0){const oldPercent=u==='percent';row.querySelector('.purchase-detail-qty').value=Number(pi.quantity)*(oldPercent?base/100:1/base);row.querySelector('.purchase-detail-cost').value=Number(pi.unit_cost)*(oldPercent?100/base:base);togglePurchaseDetailUnit(row)}};
+   $('purchaseDetailsBody').appendChild(row);togglePurchaseDetailUnit(row);
+  });
   $("editPurchaseDetails").classList.add("hidden");$("savePurchaseDetails").classList.remove("hidden");
  }else{
   $("purchaseDetailsBody").innerHTML=lines.map(pi=>{const i=itemById(pi.item_id),u=pi.unit_type||i?.unit_type||"piece",sz=Number(pi.units_per_unit||i?.units_per_unit||1),extra=["piece","percent"].includes(u)?"":" · "+sz+" шт. внутри";return'<div class="detail-item"><strong>'+(i?.name||"Позиция")+'</strong><span>'+(i?.color||"—")+'</span><span>'+pi.quantity+' '+unitName(u)+extra+'</span><strong>'+rub(pi.unit_cost)+'/'+unitName(u)+'</strong></div>'}).join("")+'<div style="padding-top:10px"><strong>Итого: '+rub(lines.reduce((s,pi)=>s+Number(pi.quantity)*Number(pi.unit_cost),0))+'</strong></div>';
@@ -1294,15 +1379,8 @@ function viewPurchase(id){purchaseDetailsView(id,false);openModal("purchaseDetai
 function editPurchaseDetailsMode(){const id=$("purchaseDetailsId").value;if(id)purchaseDetailsView(id,true)}
 async function savePurchaseDetailsChanges(){
  const id=$("purchaseDetailsId").value,p=state.purchases.find(x=>x.id===id);if(!p)return;
- const items=[...document.querySelectorAll("[data-purchase-edit-item]")].map(row=>({
-  item_id:row.dataset.purchaseEditItem,
-  color:row.querySelector(".purchase-detail-color").value.trim()||"Без цвета",
-  unit_type:row.querySelector(".purchase-detail-unit").value,
-  units_per_unit:Number(row.querySelector(".purchase-detail-size").value||1),
-  quantity:Number(row.querySelector(".purchase-detail-qty").value),
-  unit_cost:Number(row.querySelector(".purchase-detail-cost").value)
- }));
- if(items.some(x=>!x.item_id||x.quantity<=0||x.unit_cost<0||x.units_per_unit<=0))return toast("Проверь количество, цену и единицу измерения.","error");
+ const items=purchaseDetailsPayload();
+ if(items.some(x=>!x.item_id||!Number.isFinite(x.quantity)||x.quantity<=0||!Number.isFinite(x.unit_cost)||x.unit_cost<0||x.units_per_unit<=0||!Number.isFinite(x.conversion_base)||x.conversion_base<=0))return toast("Проверь количество, цену и единицу измерения.","error");
  items.unshift({_meta:{edit_purchase_id:id,target_client_id:p.target_client_id||null}});
  try{
   const r=await api("createPurchase",{payload:{title:p.title||"",purchase_date:p.purchase_date,supplier:p.supplier||"",target_order_id:p.target_order_id||null,note:p.note||"",items}});
@@ -1465,7 +1543,7 @@ $("saveClient").onclick=async()=>{
  resetClientModal();
 };
 $("saveOrder").onclick=async()=>{const invalid=[...document.querySelectorAll('#reserveRows .reserve-row')].some(row=>row.querySelector('.reserve-item').value&&(!Number.isFinite(Number(row.querySelector('.reserve-qty').value))||Number(row.querySelector('.reserve-qty').value)<=0));if(invalid)return toast("Укажи количество или процент больше нуля для каждой выбранной позиции.","error");const p=orderPayload();if(p.sales_channel!=="retail"&&!p.client_id)return toast("Выбери клиента.","error");if(p.sales_channel==="subscription"&&Number($("orderDeliveryNo").value||0)<=0)return toast("Укажи номер поставки по подписке.","error");if(await mutate(p.id?"updateOrder":"createOrder",{payload:p},p.id?"Заказ обновлён":"Заказ создан"))resetOrderModal()};
-$("savePurchase").onclick=async()=>{const items=purchaseItemsPayload();if(!items.length||items.some(x=>!x.name||!Number.isFinite(x.quantity)||x.quantity<=0||!Number.isFinite(x.unit_cost)||x.unit_cost<0||x.units_per_unit<=0))return toast("Проверь все строки закупки: название, количество и цену.","error");items.unshift({_meta:{target_client_id:$("purchaseClient").value||null}});if(await mutate("createPurchase",{payload:{title:$("purchaseTitle").value.trim(),purchase_date:$("purchaseDate").value||today(),supplier:$("purchaseSupplier").value.trim(),target_order_id:$("purchaseTarget").value||null,note:$("purchaseNote").value.trim(),items}},"Закупка сохранена"))resetPurchaseModal()};
+$("savePurchase").onclick=async()=>{const items=purchaseItemsPayload();if(!items.length||items.some(x=>!x.name||!Number.isFinite(x.quantity)||x.quantity<=0||!Number.isFinite(x.unit_cost)||x.unit_cost<0||x.units_per_unit<=0||!Number.isFinite(x.conversion_base)||x.conversion_base<=0))return toast("Проверь все строки закупки: название, количество и цену.","error");items.unshift({_meta:{target_client_id:$("purchaseClient").value||null}});if(await mutate("createPurchase",{payload:{title:$("purchaseTitle").value.trim(),purchase_date:$("purchaseDate").value||today(),supplier:$("purchaseSupplier").value.trim(),target_order_id:$("purchaseTarget").value||null,note:$("purchaseNote").value.trim(),items}},"Закупка сохранена"))resetPurchaseModal()};
 $("inventoryUnit").onchange=toggleInventoryUnit;$("inventoryPercent").onchange=toggleInventoryUnit;$("inventoryConversionBase").oninput=toggleInventoryUnit;
 $("saveInventoryItem").onclick=async()=>{const id=$("inventoryEditId").value,name=$("inventoryName").value.trim(),cost=Number($("inventoryAvgCost").value||0),unit_type=$("inventoryPercent").checked?"percent":$("inventoryUnit").value,units_per_unit=["piece","percent"].includes(unit_type)?1:Number($("inventoryUnitSize").value||0);if(!name)return toast("Укажи название позиции.","error");if(cost<0)return toast("Цена не может быть отрицательной.","error");if(units_per_unit<=0)return toast("Укажи количество штук в пучке или упаковке.","error");const p={id:id||undefined,category:$("inventoryCategory").value,name,color:$("inventoryColor").value.trim(),avg_cost:cost,unit_type,units_per_unit,conversion_base:Number($("inventoryConversionBase").value||1)};if(await mutate(id?"updateInventoryItem":"createInventoryItem",{payload:p},id?"Позиция обновлена":"Позиция создана"))resetInventoryModal()};
 $("savePayment").onclick=async()=>{const edit=$("paymentEditId").value,amount=Number($("paymentAmount").value),client_id=$("paymentClient").value;if(!client_id||amount<=0)return toast("Укажи клиента и сумму.","error");const p={id:edit||undefined,client_id,amount,payment_date:$("paymentDate").value||today(),note:$("paymentNote").value.trim(),subscription_id:state.subscriptions.find(s=>s.client_id===client_id&&s.status==="active")?.id||null};if(await mutate(edit?"updatePayment":"createPayment",{payload:p},edit?"Оплата обновлена":"Оплата добавлена"))resetPaymentModal()};
@@ -1480,3 +1558,4 @@ document.addEventListener("visibilitychange",()=>{if(!document.hidden&&sessionTo
 <!-- pages-redeploy -->
 </body>
 </html>
+
